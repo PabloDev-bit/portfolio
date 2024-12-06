@@ -1,1 +1,1 @@
-Il est important d'avoir le dossier node module dans la racine du dossier sinon le site ne focntionne ainsi que les packages.json  packages-lock.json
+Pour que le site fonctionne vous devez utiliser npm install dans le terminal dans le dossier my-next-app
