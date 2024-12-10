@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { motion } from 'framer-motion'
-import React, { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Particle {
   x: number;
@@ -14,8 +14,7 @@ interface Particle {
 
 function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  let animationFrameId: number;
-  let particles: Particle[] = [];
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,6 +23,15 @@ function ParticleBackground() {
     if (!ctx) return;
 
     const colors = ['#ff6ec7', '#9d4edd', '#5a189a', '#240046', '#3c096c', '#b5179e'];
+    let particles: Particle[] = [];
+    let animationFrameId: number;
+
+    function resizeCanvas() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
     function init() {
       particles = [];
@@ -40,33 +48,48 @@ function ParticleBackground() {
       }
     }
 
-    function animate() {
-      if (!ctx) return;
+    function drawParticles() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return; 
+
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      particles.forEach(p => {
-        p.x += p.velocityX;
-        p.y += p.velocityY;
-
-        if (p.x < 0 || p.x > window.innerWidth) p.velocityX *= -1;
-        if (p.y < 0 || p.y > window.innerHeight) p.velocityY *= -1;
-
+      for (const p of particles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2, false);
         ctx.fillStyle = p.color;
         ctx.fill();
-      });
+      }
+    }
+
+    function animate() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      for (const p of particles) {
+        p.x += p.velocityX;
+        p.y += p.velocityY;
+        if (p.x < 0 || p.x > window.innerWidth) p.velocityX *= -1;
+        if (p.y < 0 || p.y > window.innerHeight) p.velocityY *= -1;
+      }
+
+      drawParticles();
       animationFrameId = requestAnimationFrame(animate);
     }
 
+    resizeCanvas();
     init();
-    animate();
+    drawParticles();
+    setInitialized(true);
+    animationFrameId = requestAnimationFrame(animate);
 
     function handleResize() {
-      if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
+      resizeCanvas();
       init();
+      drawParticles();
     }
 
     window.addEventListener('resize', handleResize);
@@ -80,14 +103,11 @@ function ParticleBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
-      width={typeof window !== 'undefined' ? window.innerWidth : 1920}
-      height={typeof window !== 'undefined' ? window.innerHeight : 1080}
+      className={`fixed top-0 left-0 w-full h-full pointer-events-none z-0 transition-opacity duration-500 ${!initialized ? 'opacity-0' : 'opacity-100'}`}
     />
   );
 }
 
-// Composant pour Lazy Loading d'une section (ex: témoignages)
 function LazySection({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -119,12 +139,12 @@ export default function Home() {
       <ParticleBackground />
 
       {/* Contenu principal */}
-      <main className="relative z-10 flex flex-col space-y-32">
+      <main className="relative z-10 flex flex-col space-y-32 px-4 md:px-6">
 
         {/* SECTION 1: HERO / INTRO */}
-        <section className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <section className="relative flex flex-col items-center justify-center min-h-screen text-center">
           <motion.h1
-            className="relative z-10 text-6xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-lg"
+            className="relative z-10 text-5xl sm:text-6xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-lg"
             initial={{ opacity: 0, y: -60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
@@ -133,7 +153,7 @@ export default function Home() {
           </motion.h1>
 
           <motion.h2
-            className="relative z-10 text-2xl md:text-3xl font-medium text-gray-200 mt-4"
+            className="relative z-10 text-xl sm:text-2xl md:text-3xl font-medium text-gray-200 mt-4"
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2 }}
@@ -142,7 +162,7 @@ export default function Home() {
           </motion.h2>
 
           <motion.p
-            className="relative z-10 text-lg text-gray-300 mt-6 max-w-3xl leading-relaxed mx-auto"
+            className="relative z-10 text-base sm:text-lg text-gray-300 mt-6 max-w-3xl leading-relaxed mx-auto px-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.4 }}
@@ -151,7 +171,7 @@ export default function Home() {
           </motion.p>
 
           <motion.div
-            className="mt-10 relative z-10 flex space-x-4"
+            className="mt-10 relative z-10 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 items-center"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.6 }}
@@ -184,16 +204,15 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* DIVISEUR VISUEL */}
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
 
         {/* SECTION 2: A PROPOS */}
         <section
           id="about"
-          className="relative flex flex-col items-center text-center max-w-4xl px-6 space-y-8 mx-auto"
+          className="relative flex flex-col items-center text-center max-w-4xl mx-auto space-y-8"
         >
           <motion.h2
-            className="text-4xl font-extrabold text-white"
+            className="text-3xl sm:text-4xl font-extrabold text-white"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -202,7 +221,7 @@ export default function Home() {
             À Propos de Moi
           </motion.h2>
           <motion.p
-            className="text-gray-300 leading-relaxed max-w-2xl mx-auto"
+            className="text-gray-300 leading-relaxed max-w-2xl mx-auto px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
@@ -213,7 +232,7 @@ export default function Home() {
           <motion.img
             src="/images/profile.jpg"
             alt="Photo de Pablo"
-            className="w-40 h-40 rounded-full border-4 border-pink-500 shadow-lg transform hover:scale-105 transition-transform"
+            className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-pink-500 shadow-lg transform hover:scale-105 transition-transform"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
@@ -221,16 +240,15 @@ export default function Home() {
           />
         </section>
 
-        {/* DIVISEUR VISUEL */}
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
 
         {/* SECTION 3: COMPETENCES */}
         <section
           id="skills"
-          className="relative bg-gray-800 bg-opacity-70 p-10 rounded-xl max-w-5xl mx-auto space-y-8 text-center backdrop-blur-md"
+          className="relative bg-gray-800 bg-opacity-70 p-6 sm:p-10 rounded-xl max-w-5xl mx-auto space-y-8 text-center backdrop-blur-md"
         >
           <motion.h2
-            className="text-4xl font-extrabold text-white"
+            className="text-3xl sm:text-4xl font-extrabold text-white"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -246,34 +264,33 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <div className="flex flex-col items-center">
-              <i className="fab fa-react text-6xl text-blue-500" aria-hidden="true"></i>
+              <i className="fab fa-react text-5xl sm:text-6xl text-blue-500" aria-hidden="true"></i>
               <p className="mt-2 text-gray-300 font-medium">React</p>
             </div>
             <div className="flex flex-col items-center">
-              <i className="fab fa-js-square text-6xl text-yellow-400" aria-hidden="true"></i>
+              <i className="fab fa-js-square text-5xl sm:text-6xl text-yellow-400" aria-hidden="true"></i>
               <p className="mt-2 text-gray-300 font-medium">JavaScript</p>
             </div>
             <div className="flex flex-col items-center">
-              <i className="fab fa-node text-6xl text-green-500" aria-hidden="true"></i>
+              <i className="fab fa-node text-5xl sm:text-6xl text-green-500" aria-hidden="true"></i>
               <p className="mt-2 text-gray-300 font-medium">Node.js</p>
             </div>
             <div className="flex flex-col items-center">
-              <i className="fab fa-css3-alt text-6xl text-blue-300" aria-hidden="true"></i>
+              <i className="fab fa-css3-alt text-5xl sm:text-6xl text-blue-300" aria-hidden="true"></i>
               <p className="mt-2 text-gray-300 font-medium">CSS</p>
             </div>
           </motion.div>
         </section>
 
-        {/* DIVISEUR VISUEL */}
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
 
         {/* SECTION 4: PROJETS */}
         <section
           id="projects"
-          className="max-w-5xl px-6 space-y-10 mx-auto"
+          className="max-w-5xl px-4 sm:px-6 space-y-10 mx-auto"
         >
           <motion.h2
-            className="text-4xl font-extrabold text-white text-center"
+            className="text-3xl sm:text-4xl font-extrabold text-white text-center"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -289,19 +306,19 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <div className="bg-gray-700 bg-opacity-50 p-6 rounded-lg hover:shadow-2xl transition shadow-pink-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
+            <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg hover:shadow-2xl transition shadow-pink-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
               <h3 className="text-xl font-bold text-white mb-2">Projet E-commerce</h3>
               <p className="text-gray-300 mb-4">Une plateforme rapide, fluide et intuitive pour booster la vente de produits.</p>
               <a href="#" className="text-pink-400 hover:underline text-sm" aria-label="En savoir plus sur le projet E-commerce">En savoir plus →</a>
             </div>
 
-            <div className="bg-gray-700 bg-opacity-50 p-6 rounded-lg hover:shadow-2xl transition shadow-purple-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
+            <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg hover:shadow-2xl transition shadow-purple-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
               <h3 className="text-xl font-bold text-white mb-2">Jeu 3D</h3>
               <p className="text-gray-300 mb-4">Un univers captivant développé avec Unity et C#.</p>
               <a href="#" className="text-purple-400 hover:underline text-sm" aria-label="En savoir plus sur le jeu 3D">En savoir plus →</a>
             </div>
 
-            <div className="bg-gray-700 bg-opacity-50 p-6 rounded-lg hover:shadow-2xl transition shadow-indigo-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
+            <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg hover:shadow-2xl transition shadow-indigo-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
               <h3 className="text-xl font-bold text-white mb-2">Dashboard Financier</h3>
               <p className="text-gray-300 mb-4">Une analyse financière en temps réel, précise et dynamique.</p>
               <a href="#" className="text-indigo-400 hover:underline text-sm" aria-label="En savoir plus sur le dashboard financier">En savoir plus →</a>
@@ -309,17 +326,16 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* DIVISEUR VISUEL */}
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
 
         {/* SECTION TEMOIGNAGES (LAZY LOADED) */}
         <LazySection>
           <section
             id="testimonials"
-            className="max-w-5xl px-6 space-y-10 mx-auto"
+            className="max-w-5xl px-4 sm:px-6 space-y-10 mx-auto"
           >
             <motion.h2
-              className="text-4xl font-extrabold text-white text-center"
+              className="text-3xl sm:text-4xl font-extrabold text-white text-center"
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -335,17 +351,17 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.3 }}
               viewport={{ once: true }}
             >
-              <div className="bg-gray-700 bg-opacity-50 p-6 rounded-lg text-center backdrop-blur-lg">
+              <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
                 <p className="text-gray-300 italic mb-4">"Pablo a transformé notre vision en un produit numérique performant et magnifique."</p>
                 <p className="text-pink-400 font-semibold">- Client A</p>
               </div>
 
-              <div className="bg-gray-700 bg-opacity-50 p-6 rounded-lg text-center backdrop-blur-lg">
+              <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
                 <p className="text-gray-300 italic mb-4">"Une collaboration fluide et des résultats au-delà de nos espérances."</p>
                 <p className="text-purple-400 font-semibold">- Client B</p>
               </div>
 
-              <div className="bg-gray-700 bg-opacity-50 p-6 rounded-lg text-center backdrop-blur-lg">
+              <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
                 <p className="text-gray-300 italic mb-4">"Un professionnalisme irréprochable, un code propre et une UX au top."</p>
                 <p className="text-indigo-400 font-semibold">- Client C</p>
               </div>
@@ -353,18 +369,17 @@ export default function Home() {
           </section>
         </LazySection>
 
-        {/* DIVISEUR VISUEL */}
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
 
         {/* SECTION CONTACT (CTA) */}
         <section
           id="contact"
-          className="max-w-4xl px-6 mx-auto space-y-8"
+          className="max-w-4xl px-4 sm:px-6 mx-auto space-y-8"
           aria-labelledby="contact-heading"
         >
           <motion.h2
             id="contact-heading"
-            className="text-4xl font-extrabold text-white text-center"
+            className="text-3xl sm:text-4xl font-extrabold text-white text-center"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -416,10 +431,9 @@ export default function Home() {
         </section>
       </main>
 
-      {/* FOOTER - Ne pas modifier */}
       <footer className="text-center text-gray-400 text-sm py-6 border-t border-gray-700 mt-20 z-10">
         © {new Date().getFullYear()} Pablo - Tous droits réservés.
       </footer>
     </div>
-  )
+  );
 }
