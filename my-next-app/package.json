@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install --legacy-peer-deps"
+    "postinstall": ""
   },
   "dependencies": {
     "@types/mapbox-gl": "^2.6.0",
