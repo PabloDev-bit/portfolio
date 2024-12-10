@@ -1,16 +1,13 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  reactStrictMode: true, // Active le mode strict de React
-  // Note : "swcMinify" a été supprimé car non reconnu dans Next.js 15.
-
-  // Redirections pour les pages inexistantes
+const nextConfig = {
+  reactStrictMode: true,
   async redirects() {
     return [
       {
-        source: "/:path*", // Redirige toutes les pages non existantes
-        destination: "/", // Redirection vers la page d'accueil
-        permanent: false, // Indique que ce n'est pas une redirection permanente
+        source: "/old-path", // Changez "/old-path" à une route spécifique si nécessaire
+        destination: "/new-path", // Assurez-vous que la destination n'est pas "/old-path"
+        permanent: false,
       },
     ];
   },
