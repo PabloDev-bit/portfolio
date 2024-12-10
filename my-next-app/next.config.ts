@@ -1,3 +1,5 @@
+import type { NextConfig } from "next";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true, // Active le mode strict de React
   swcMinify: true, // Active la minification SWC pour de meilleures performances
@@ -9,7 +11,7 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         destination: '/',
-        permanent: false, // Si vous voulez rediriger toutes les erreurs vers l'accueil
+        permanent: false, // Redirige les pages inexistantes vers la page d'accueil
       },
     ];
   },
