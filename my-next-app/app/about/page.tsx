@@ -58,7 +58,7 @@ const visitedPlaces: Place[] = [
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoicGFibGl0bzM1NTQwIiwiYSI6ImNtNGRkcm5pNjBrbTkycG9uaWFybTFhMzMifQ.G92iGrmTul-F96VMmdrQAw';
 
-// Import dynamique des composants map, avec typage
+
 const Map = dynamic<MapProps>(() => import('react-map-gl').then(mod => mod.Map), { ssr: false });
 const Marker = dynamic(() => import('react-map-gl').then(mod => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-map-gl').then(mod => mod.Popup), { ssr: false });

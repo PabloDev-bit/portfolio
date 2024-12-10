@@ -10,19 +10,20 @@
     "postinstall": "npm install --legacy-peer-deps"
   },
   "dependencies": {
+    "@types/mapbox-gl": "^2.6.0",
+    "@types/react-map-gl": "^6.1.7",
     "framer-motion": "^11.13.3",
     "leaflet": "^1.9.4",
-    "mapbox-gl": "^3.8.0",
+    "mapbox-gl": "^2.10.0",
     "next": "15.0.3",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-icons": "^5.4.0",
     "react-leaflet": "^4.2.1",
     "react-map-gl": "^7.1.7"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.15",
-    "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
