@@ -1,4 +1,4 @@
-// pages/About.tsx
+// app/about/page.tsx
 
 'use client';
 
@@ -57,7 +57,6 @@ const visitedPlaces: Place[] = [
 ];
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoicGFibGl0bzM1NTQwIiwiYSI6ImNtNGRkcm5pNjBrbTkycG9uaWFybTFhMzMifQ.G92iGrmTul-F96VMmdrQAw';
-
 
 const Map = dynamic<MapProps>(() => import('react-map-gl').then(mod => mod.Map), { ssr: false });
 const Marker = dynamic(() => import('react-map-gl').then(mod => mod.Marker), { ssr: false });
@@ -244,7 +243,8 @@ const About: React.FC = () => {
                   longitude={place.coords[0]}
                   latitude={place.coords[1]}
                   anchor="bottom"
-                  onClick={(e: any) => {
+                  onClick={(e) => {
+                    // L'événement est de type MarkerEvent, e.originalEvent est un MouseEvent DOM
                     e.originalEvent.stopPropagation();
                     setSelectedPlace(place);
                   }}

@@ -1,21 +1,19 @@
-'use client'
+'use client';
 
-import { motion } from 'framer-motion'
-import React, { useEffect, useRef } from 'react'
+import { motion } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
 
-interface Particle {
+interface ParticleData {
   x: number;
   y: number;
-  radius: number;
-  color: string;
-  velocityX: number;
-  velocityY: number;
+  vx: number;
+  vy: number;
 }
 
 function AIParticlesBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  let animationFrameId: number;
-  let particles: { x: number; y: number; vx: number; vy: number; }[] = [];
+  const particles = useRef<ParticleData[]>([]);
+  const animationFrameId = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,12 +22,11 @@ function AIParticlesBackground() {
     if (!ctx) return;
 
     const numParticles = 40;
-    const colors = ['#ff6ec7', '#9d4edd', '#5a189a', '#3c096c', '#b5179e'];
 
     function init() {
-      particles = [];
+      particles.current = [];
       for (let i = 0; i < numParticles; i++) {
-        particles.push({
+        particles.current.push({
           x: Math.random() * window.innerWidth,
           y: Math.random() * window.innerHeight,
           vx: (Math.random() - 0.5) * 0.3,
@@ -42,8 +39,8 @@ function AIParticlesBackground() {
       if (!ctx) return;
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-      for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
+      for (let i = 0; i < particles.current.length; i++) {
+        const p = particles.current[i];
         p.x += p.vx;
         p.y += p.vy;
         if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
@@ -54,8 +51,8 @@ function AIParticlesBackground() {
         ctx.fillStyle = '#ff6ec7';
         ctx.fill();
 
-        for (let j = i + 1; j < particles.length; j++) {
-          let p2 = particles[j];
+        for (let j = i + 1; j < particles.current.length; j++) {
+          const p2 = particles.current[j];
           const dist = Math.sqrt((p.x - p2.x) ** 2 + (p.y - p2.y) ** 2);
           if (dist < 150) {
             ctx.beginPath();
@@ -67,7 +64,7 @@ function AIParticlesBackground() {
         }
       }
 
-      animationFrameId = requestAnimationFrame(animate);
+      animationFrameId.current = requestAnimationFrame(animate);
     }
 
     function handleResize() {
@@ -85,7 +82,7 @@ function AIParticlesBackground() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animationFrameId.current);
     };
   }, []);
 
@@ -127,7 +124,6 @@ export default function SkillsPage() {
 
       {/* UNIVERSE 1: Web Development */}
       <section className="relative py-20 px-6 bg-[#141414]">
-        {/* Gradient radial plus clair derrière le texte */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_#222_0%,_#000_100%)] opacity-90"></div>
 
         <motion.div
@@ -137,7 +133,6 @@ export default function SkillsPage() {
           transition={{duration:0.8}}
           viewport={{ once: true }}
         >
-          {/* Effet luminescent derrière le titre */}
           <div className="relative inline-block">
             <span className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 blur-md opacity-30 rounded-lg"></span>
             <h2 className="relative text-4xl font-extrabold text-white">Web Development</h2>
@@ -259,5 +254,5 @@ export default function SkillsPage() {
         </motion.div>
       </section>
     </motion.div>
-  )
+  );
 }

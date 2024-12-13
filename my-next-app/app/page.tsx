@@ -167,7 +167,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.4 }}
           >
-            J'aide les entreprises à donner vie à leurs idées à travers des expériences numériques immersives, associant créativité, expertise et technologies de pointe.
+            J&apos;aide les entreprises à donner vie à leurs idées à travers des expériences numériques immersives, associant créativité, expertise et technologies de pointe.
           </motion.p>
 
           <motion.div
@@ -352,17 +352,17 @@ export default function Home() {
               viewport={{ once: true }}
             >
               <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
-                <p className="text-gray-300 italic mb-4">"Pablo a transformé notre vision en un produit numérique performant et magnifique."</p>
+                <p className="text-gray-300 italic mb-4">&quot;Pablo a transformé notre vision en un produit numérique performant et magnifique.&quot;</p>
                 <p className="text-pink-400 font-semibold">- Client A</p>
               </div>
 
               <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
-                <p className="text-gray-300 italic mb-4">"Une collaboration fluide et des résultats au-delà de nos espérances."</p>
+                <p className="text-gray-300 italic mb-4">&quot;Une collaboration fluide et des résultats au-delà de nos espérances.&quot;</p>
                 <p className="text-purple-400 font-semibold">- Client B</p>
               </div>
 
               <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
-                <p className="text-gray-300 italic mb-4">"Un professionnalisme irréprochable, un code propre et une UX au top."</p>
+                <p className="text-gray-300 italic mb-4">&quot;Un professionnalisme irréprochable, un code propre et une UX au top.&quot;</p>
                 <p className="text-indigo-400 font-semibold">- Client C</p>
               </div>
             </motion.div>
