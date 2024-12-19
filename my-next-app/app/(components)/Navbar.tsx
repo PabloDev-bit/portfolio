@@ -52,7 +52,7 @@ export default function Navbar() {
         <div className="hidden md:flex space-x-6 text-white font-medium">
           <NavItem href="/">Accueil</NavItem>
           <NavItem href="/about">À propos</NavItem>
-          <NavItem href="/skills">Expérience</NavItem>
+          <NavItem href="/experience">Expérience</NavItem>
           <NavItem href="/skills">Compétences</NavItem>
           <NavItem href="/projects">Projets</NavItem>
           <NavItem href="/contact">Contact</NavItem>
