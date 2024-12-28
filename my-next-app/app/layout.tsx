@@ -3,7 +3,7 @@ import { ReactNode } from 'react'
 import Navbar from './(components)/Navbar'
 import Footer from './(components)/Footer'
 import PageTransition from './(components)/PageTransition'
-import CustomCursor from './(components)/CustomCursor'
+
 
 export const metadata = {
   title: 'Pablo | Portfolio',
@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="relative min-h-screen bg-black text-white overflow-y-auto">
         <Navbar />
 
-        <CustomCursor />
+        
 
         {/* Contenu principal */}
         <div className="flex flex-col min-h-screen">

@@ -230,7 +230,7 @@ export default function Home() {
             Originaire de Saint-Malo et établi à Sherbrooke, Canada, je suis un développeur web mêlant design intuitif et code performant. Mon ambition ? Créer des solutions numériques qui dépassent les attentes et marquent les esprits.
           </motion.p>
           <motion.img
-            src="/images/profile.jpg"
+            src="/images/photoProfil.jpg"
             alt="Photo de Pablo"
             className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-pink-500 shadow-lg transform hover:scale-105 transition-transform"
             initial={{ opacity: 0, y: 10 }}
