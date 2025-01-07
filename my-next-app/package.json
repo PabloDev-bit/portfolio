@@ -10,6 +10,7 @@
     "postinstall": ""
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@types/mapbox-gl": "^2.6.0",
     "@types/react-map-gl": "^6.1.7",
     "framer-motion": "^11.13.3",
