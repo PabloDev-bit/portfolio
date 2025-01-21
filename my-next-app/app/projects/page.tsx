@@ -132,6 +132,7 @@ export default function Projects() {
       title: 'CostCrafter - Prototype de comparaison de coûts de la vie',
       description:
         "Une application expérimentale permettant de comparer plusieurs villes selon leurs coûts (logement, transport, etc.).",
+        link: "https://costcrafters.vercel.app",
       detailedDescription: `
   Technologies utilisées :
 - React & TypeScript
@@ -151,6 +152,8 @@ export default function Projects() {
 - Carte interactive personnalisée
 - Système de villes similaires
 - Graphiques comparatifs
+
+
 
 Malgré ces limitations, CostCrafter démontre une bonne intégration de React, TypeScript et l’usage d’APIs tierces.
       `,
@@ -336,7 +339,6 @@ React (frontend) et modèles Transformers. Exploration de DialoGPT, etc.`,
                 </div>
               )}
 
-              {/* Lien externe si besoin */}
               {selectedProject.link && (
                 <a
                   href={selectedProject.link}
