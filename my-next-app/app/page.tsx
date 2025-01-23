@@ -327,64 +327,7 @@ export default function Home() {
 
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
 
-        {/* SECTION CONTACT (CTA) */}
-        <section
-          id="contact"
-          className="max-w-4xl px-4 sm:px-6 mx-auto space-y-8"
-          aria-labelledby="contact-heading"
-        >
-          <motion.h2
-            id="contact-heading"
-            className="text-3xl sm:text-4xl font-extrabold text-white text-center"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            Contactez-moi
-          </motion.h2>
-          <motion.p
-            className="text-gray-300 text-center max-w-md mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            Prêt à transformer vos idées en réalités digitales ? Remplissez le formulaire ou envoyez-moi un message.
-          </motion.p>
-          <motion.form
-            className="flex flex-col space-y-4 max-w-md mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            viewport={{ once: true }}
-          >
-            <input
-              type="text"
-              placeholder="Votre nom"
-              className="px-4 py-2 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-              aria-label="Votre nom"
-            />
-            <input
-              type="email"
-              placeholder="Votre email"
-              className="px-4 py-2 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-              aria-label="Votre email"
-            />
-            <textarea
-              placeholder="Votre message"
-              className="px-4 py-2 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-              aria-label="Votre message"
-            />
-            <button
-              type="submit"
-              className="bg-pink-600 px-8 py-3 rounded-full shadow-md font-semibold text-white transform hover:scale-105 transition-transform hover:shadow-pink-500/50"
-              aria-label="Envoyer le message"
-            >
-              Envoyer
-            </button>
-          </motion.form>
-        </section>
+
       </main>
 
       <footer className="text-center text-gray-400 text-sm py-6 border-t border-gray-700 mt-20 z-10">
