@@ -282,51 +282,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
-
-        {/* SECTION 4: PROJETS */}
-        <section
-          id="projects"
-          className="max-w-5xl px-4 sm:px-6 space-y-10 mx-auto"
-        >
-          <motion.h2
-            className="text-3xl sm:text-4xl font-extrabold text-white text-center"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            Mes Projets
-          </motion.h2>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg hover:shadow-2xl transition shadow-pink-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
-              <h3 className="text-xl font-bold text-white mb-2">Projet E-commerce</h3>
-              <p className="text-gray-300 mb-4">Une plateforme rapide, fluide et intuitive pour booster la vente de produits.</p>
-              <a href="#" className="text-pink-400 hover:underline text-sm" aria-label="En savoir plus sur le projet E-commerce">En savoir plus →</a>
-            </div>
-
-            <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg hover:shadow-2xl transition shadow-purple-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
-              <h3 className="text-xl font-bold text-white mb-2">Jeu 3D</h3>
-              <p className="text-gray-300 mb-4">Un univers captivant développé avec Unity et C#.</p>
-              <a href="#" className="text-purple-400 hover:underline text-sm" aria-label="En savoir plus sur le jeu 3D">En savoir plus →</a>
-            </div>
-
-            <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg hover:shadow-2xl transition shadow-indigo-500/20 backdrop-blur-lg transform hover:-translate-y-2 hover:scale-[1.02]">
-              <h3 className="text-xl font-bold text-white mb-2">Dashboard Financier</h3>
-              <p className="text-gray-300 mb-4">Une analyse financière en temps réel, précise et dynamique.</p>
-              <a href="#" className="text-indigo-400 hover:underline text-sm" aria-label="En savoir plus sur le dashboard financier">En savoir plus →</a>
-            </div>
-          </motion.div>
-        </section>
-
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
+        
 
         {/* SECTION TEMOIGNAGES (LAZY LOADED) */}
         <LazySection>
