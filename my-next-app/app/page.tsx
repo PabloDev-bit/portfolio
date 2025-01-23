@@ -325,7 +325,7 @@ export default function Home() {
           </section>
         </LazySection>
 
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
+        
 
 
       </main>
