@@ -283,47 +283,7 @@ export default function Home() {
         </section>
 
         
-
-        {/* SECTION TEMOIGNAGES (LAZY LOADED) */}
-        <LazySection>
-          <section
-            id="testimonials"
-            className="max-w-5xl px-4 sm:px-6 space-y-10 mx-auto"
-          >
-            <motion.h2
-              className="text-3xl sm:text-4xl font-extrabold text-white text-center"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              Témoignages
-            </motion.h2>
-
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-3 gap-8"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-            >
-              <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
-                <p className="text-gray-300 italic mb-4">&quot;Pablo a transformé notre vision en un produit numérique performant et magnifique.&quot;</p>
-                <p className="text-pink-400 font-semibold">- Client A</p>
-              </div>
-
-              <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
-                <p className="text-gray-300 italic mb-4">&quot;Une collaboration fluide et des résultats au-delà de nos espérances.&quot;</p>
-                <p className="text-purple-400 font-semibold">- Client B</p>
-              </div>
-
-              <div className="bg-gray-700 bg-opacity-50 p-4 sm:p-6 rounded-lg text-center backdrop-blur-lg">
-                <p className="text-gray-300 italic mb-4">&quot;Un professionnalisme irréprochable, un code propre et une UX au top.&quot;</p>
-                <p className="text-indigo-400 font-semibold">- Client C</p>
-              </div>
-            </motion.div>
-          </section>
-        </LazySection>
+        
 
         
 
