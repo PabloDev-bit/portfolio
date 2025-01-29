@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { FaMapMarkerAlt, FaGraduationCap, FaLaptopCode, FaProjectDiagram } from 'react-icons/fa';
+import { FaGraduationCap, FaLaptopCode } from 'react-icons/fa';
 import { TypeAnimation } from 'react-type-animation';
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoicGFibGl0bzM1NTQwIiwiYSI6ImNtNGRkcm5pNjBrbTkycG9uaWFybTFhMzMifQ.G92iGrmTul-F96VMmdrQAw';
+// Import du composant Particles sans SSR
+const Particles = dynamic(() => import('../(components)/particles'), { ssr: false });
 
+// Import de la carte Mapbox (si vous avez déjà un composant custom, laissez votre config)
 const Map = dynamic(() => import('react-map-gl').then(mod => mod.Map), { ssr: false });
-const Marker = dynamic(() => import('react-map-gl').then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-map-gl').then(mod => mod.Popup), { ssr: false });
+
+// Token Mapbox (à adapter si besoin)
+const MAPBOX_TOKEN = 'pk.eyJ1IjoicGFibGl0bzM1NTQwIiwiYSI6ImNtNGRkcm5pNjBrbTkycG9uaWFybTFhMzMifQ.G92iGrmTul-F96VMmdrQAw';
 
 interface Place {
   name: string;
@@ -21,44 +24,19 @@ interface Place {
   image?: string;
 }
 
-const visitedPlaces: Place[] = [ /* ... (mêmes données qu'avant) ... */ ];
+// Vos données d’exemple (ou laisser vide si vous n’avez pas d’images)
+const visitedPlaces: Place[] = [
+  // ...
+];
 
-const About = () => {
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+export default function About() {
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
 
-  // Effet de particules maison
-  const Particles = () => (
-    <div className="absolute inset-0 z-0 overflow-hidden">
-      {[...Array(100)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute bg-purple-500 rounded-full"
-          style={{
-            width: Math.random() * 5 + 2,
-            height: Math.random() * 5 + 2,
-            top: Math.random() * 100 + '%',
-            left: Math.random() * 100 + '%',
-          }}
-          animate={{
-            y: [0, 100, 0],
-            x: [0, Math.random() * 50 - 25, 0],
-            opacity: [0.3, 1, 0.3],
-          }}
-          transition={{
-            duration: Math.random() * 3 + 2,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-
   return (
     <div className="relative min-h-screen w-full bg-neutral-950 text-white overflow-hidden">
+      
+      {/* Fond (dégradé + particules client-only) */}
       <motion.div 
         className="absolute inset-0 z-0 bg-gradient-to-br from-black via-violet-900/30 to-indigo-900/20"
         style={{ y }}
@@ -200,7 +178,6 @@ const About = () => {
 
           <div className="relative h-[600px] rounded-3xl overflow-hidden border-2 border-gray-800">
             <Map
-              onLoad={() => setMapLoaded(true)}
               initialViewState={{
                 longitude: 0,
                 latitude: 20,
@@ -210,7 +187,7 @@ const About = () => {
               mapStyle="mapbox://styles/mapbox/dark-v11"
               mapboxAccessToken={MAPBOX_TOKEN}
             >
-              {/* ... (même code pour les marqueurs et popups) ... */}
+              {/* Marker / Popup à réintégrer si besoin, en s'assurant de les utiliser réellement */}
             </Map>
           </div>
         </section>
@@ -222,7 +199,7 @@ const About = () => {
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
           >
-            
+            {/* Vide intentionnellement */}
           </motion.h2>
 
           <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
@@ -251,6 +228,4 @@ const About = () => {
       </main>
     </div>
   );
-};
-
-export default About;
+}
