@@ -237,7 +237,7 @@ export default function Home() {
                     duration: 2,
                   }}
                 >
-                  <span className="font-semibold">🚀 Disponible maintenant</span>
+                  
                 </motion.div>
               </div>
             </motion.div>
