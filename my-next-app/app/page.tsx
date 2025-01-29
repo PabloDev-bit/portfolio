@@ -153,11 +153,9 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                  Créateur d&apos;Expériences
+                Pablo, développeur full-stack
                   <br />
-                  <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                    Numériques Uniques
-                  </span>
+                 
                 </h1>
               </motion.div>
 
