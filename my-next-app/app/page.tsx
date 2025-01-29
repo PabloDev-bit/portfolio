@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { FiGithub, FiLinkedin, FiMail, FiArrowUpRight } from "react-icons/fi";
 
 interface Particle {
   x: number;
@@ -10,11 +11,13 @@ interface Particle {
   color: string;
   velocityX: number;
   velocityY: number;
+  alpha: number;
 }
 
 function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const mousePos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -23,81 +26,87 @@ function ParticleBackground() {
     if (!ctx) return;
 
     const colors = [
-      "#ff6ec7",
-      "#9d4edd",
-      "#5a189a",
-      "#240046",
-      "#3c096c",
-      "#b5179e",
+      "rgba(255,110,199,0.8)",
+      "rgba(157,78,221,0.8)",
+      "rgba(90,24,154,0.8)",
+      "rgba(60,9,108,0.8)",
     ];
     let particles: Particle[] = [];
     let animationFrameId: number;
 
-    function resizeCanvas() {
-      const canvasEl = canvasRef.current;
-      if (!canvasEl) return;
-      canvasEl.width = window.innerWidth;
-      canvasEl.height = window.innerHeight;
-    }
+    const handleMouseMove = (e: MouseEvent) => {
+      mousePos.current = { x: e.clientX, y: e.clientY };
+    };
 
-    function init() {
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    const init = () => {
       particles = [];
-      const numberOfParticles = window.innerWidth < 768 ? 30 : 60;
+      const density = window.innerWidth < 768 ? 0.0002 : 0.0003;
+      const numberOfParticles = Math.floor(window.innerWidth * window.innerHeight * density);
+      
       for (let i = 0; i < numberOfParticles; i++) {
         particles.push({
           x: Math.random() * window.innerWidth,
           y: Math.random() * window.innerHeight,
-          radius: Math.random() * 3 + 1,
+          radius: Math.random() * 4 + 1,
           color: colors[Math.floor(Math.random() * colors.length)],
-          velocityX: (Math.random() - 0.5) * 0.3,
-          velocityY: (Math.random() - 0.5) * 0.3,
+          velocityX: (Math.random() - 0.5) * 0.1,
+          velocityY: (Math.random() - 0.5) * 0.1,
+          alpha: Math.random() * 0.5 + 0.5,
         });
       }
-    }
+    };
 
-    function drawParticles() {
-      const canvasEl = canvasRef.current;
-      if (!canvasEl) return;
-      const ctx2d = canvasEl.getContext("2d");
-      if (!ctx2d) return;
+    const drawParticles = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach((p) => {
+        const dx = p.x - mousePos.current.x;
+        const dy = p.y - mousePos.current.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const force = -1000 / distance;
+        
+        if (distance < 150) {
+          p.x += force * (dx / distance);
+          p.y += force * (dy / distance);
+        }
 
-      ctx2d.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      for (const p of particles) {
-        ctx2d.beginPath();
-        ctx2d.arc(p.x, p.y, p.radius, 0, Math.PI * 2, false);
-        ctx2d.fillStyle = p.color;
-        ctx2d.fill();
-      }
-    }
-
-    function animate() {
-      for (const p of particles) {
         p.x += p.velocityX;
         p.y += p.velocityY;
-        if (p.x < 0 || p.x > window.innerWidth) p.velocityX *= -1;
-        if (p.y < 0 || p.y > window.innerHeight) p.velocityY *= -1;
-      }
 
+        if (p.x < 0 || p.x > canvas.width) p.velocityX *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.velocityY *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+      });
+    };
+
+    const animate = () => {
       drawParticles();
       animationFrameId = requestAnimationFrame(animate);
-    }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      init();
+    });
 
     resizeCanvas();
     init();
-    drawParticles();
+    animate();
     setInitialized(true);
-    animationFrameId = requestAnimationFrame(animate);
-
-    function handleResize() {
-      resizeCanvas();
-      init();
-      drawParticles();
-    }
-
-    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -105,83 +114,157 @@ function ParticleBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed top-0 left-0 w-full h-full pointer-events-none z-0 transition-opacity duration-500 ${
-        !initialized ? "opacity-0" : "opacity-100"
+      className={`fixed inset-0 w-full h-full pointer-events-none z-0 transition-opacity duration-1000 ${
+        initialized ? "opacity-100" : "opacity-0"
       }`}
     />
   );
 }
 
 export default function Home() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { scrollYProgress } = useScroll();
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.2]);
+
   return (
-    <div className="relative flex flex-col min-h-screen w-full font-sans text-white">
-      {/* Dégradé de fond + particules */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-purple-900 to-indigo-900" />
+    <div className="relative min-h-screen w-full overflow-hidden font-sans">
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-[#0f0720] to-[#1a0933]" />
       <ParticleBackground />
 
-      {/* Contenu principal */}
-      <main className="relative z-10 flex-grow flex items-center justify-center px-4 py-8">
-        {/* 
-          HERO SECTION 
-          => On place le texte à gauche et la photo à droite (ou l’inverse).
-        */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 max-w-5xl mx-auto">
-          {/* Bloc texte */}
-          <motion.div
-            className="text-center md:text-left"
-            initial={{ opacity: 0, x: -60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-          >
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-lg">
-              Bonjour, je suis Pablo
-            </h1>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-medium text-gray-200 mt-4">
-              Développeur Web Passionné
-            </h2>
-
-            <p className="text-base sm:text-lg text-gray-300 mt-6 max-w-2xl leading-relaxed">
-              J&apos;aide les entreprises à concrétiser leurs idées en créant
-              des expériences numériques immersives qui allient créativité et
-              technologies de pointe.
-            </p>
-
-            <div className="mt-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              {/* Redirigez si vous avez des pages Projets / Contact */}
-              <a
-                href="/projects"
-                className="inline-block bg-pink-600 px-8 py-4 rounded-full shadow-md font-semibold text-white transform hover:scale-105 transition-transform hover:shadow-pink-500/50"
+      <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          className="min-h-screen flex items-center justify-center"
+          style={{ scale }}
+        >
+          <div className="grid lg:grid-cols-2 gap-16 items-center py-24">
+            <motion.div
+              ref={ref}
+              initial="hidden"
+              animate={isInView ? "visible" : "hidden"}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { duration: 1 } },
+              }}
+            >
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
               >
-                Découvrez mes projets
-              </a>
-              <a
-                href="/contact"
-                className="inline-block bg-purple-600 px-8 py-4 rounded-full shadow-md font-semibold text-white transform hover:scale-105 transition-transform hover:shadow-purple-500/50"
-              >
-                Contactez-moi
-              </a>
-            </div>
-          </motion.div>
+                <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                  Créateur d&apos;Expériences
+                  <br />
+                  <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                    Numériques Uniques
+                  </span>
+                </h1>
+              </motion.div>
 
-          {/* Bloc photo de profil */}
-          <motion.div
-            className="flex-shrink-0"
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-          >
-            <img
-              src="/images/photoProfil.jpg"
-              alt="Photo de Pablo"
-              className="w-48 h-48 sm:w-56 sm:h-56 rounded-full border-4 border-pink-500 shadow-lg object-cover hover:scale-105 transition-transform"
-            />
-          </motion.div>
-        </div>
+              <motion.p
+                className="text-xl md:text-2xl text-gray-300 mt-8 mb-12 max-w-2xl leading-relaxed"
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                Je m&apos;appelle Pablo, développeur full-stack spécialisé dans
+                la création d&apos;applications web immersives et performantes.
+                Chaque pixel compte, chaque interaction matière.
+              </motion.p>
+
+              <motion.div
+                className="flex flex-wrap gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+              >
+                <a
+                  href="/projects"
+                  className="group relative flex items-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-4 rounded-full font-semibold text-white hover:shadow-xl hover:shadow-pink-500/20 transition-all duration-300"
+                >
+                  Explorer mes réalisations
+                  <FiArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+
+                <div className="flex gap-4">
+                  <a
+                    href="https://github.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <FiGithub size={24} />
+                  </a>
+                  <a
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <FiLinkedin size={24} />
+                  </a>
+                  <a
+                    href="mailto:contact@example.com"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <FiMail size={24} />
+                  </a>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              className="relative flex justify-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <div className="relative">
+                <img
+                  src="/images/photoProfil.jpg"
+                  alt="Pablo Développeur"
+                  className="w-80 h-80 rounded-2xl object-cover relative z-10 border-4 border-white/10 shadow-2xl"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/30 to-purple-500/30 blur-3xl rounded-2xl animate-pulse" />
+                <motion.div
+                  className="absolute -bottom-8 -right-8 bg-gradient-to-r from-pink-600 to-purple-600 p-4 rounded-2xl shadow-xl"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                    duration: 2,
+                  }}
+                >
+                  <span className="font-semibold">🚀 Disponible maintenant</span>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
       </main>
 
-      {/* FOOTER */}
-      <footer className="relative z-10 text-center text-gray-400 text-sm py-6 border-t border-gray-700">
-        © {new Date().getFullYear()} Pablo - Tous droits réservés.
+      <footer className="relative z-10 border-t border-white/10 bg-gradient-to-b from-black/50 to-transparent">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-center">
+          <div className="text-gray-400 text-sm mb-4 md:mb-0">
+            © {new Date().getFullYear()} Pablo. Tous droits réservés.
+          </div>
+          <div className="flex space-x-6">
+            <a
+              href="/mentions-legales"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Mentions légales
+            </a>
+            <a
+              href="/politique-confidentialite"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Confidentialité
+            </a>
+          </div>
+        </div>
       </footer>
     </div>
   );
