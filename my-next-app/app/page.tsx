@@ -203,7 +203,7 @@ export default function Home() {
                     <FiLinkedin size={24} />
                   </a>
                   <a
-                    href="mailto:contact@example.com"
+                    href="pablopro.dev@gmail.com"
                     className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
                   >
                     <FiMail size={24} />
