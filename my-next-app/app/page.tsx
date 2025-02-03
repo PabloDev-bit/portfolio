@@ -46,8 +46,10 @@ function ParticleBackground() {
     const init = () => {
       particles = [];
       const density = window.innerWidth < 768 ? 0.0002 : 0.0003;
-      const numberOfParticles = Math.floor(window.innerWidth * window.innerHeight * density);
-      
+      const numberOfParticles = Math.floor(
+        window.innerWidth * window.innerHeight * density
+      );
+
       for (let i = 0; i < numberOfParticles; i++) {
         particles.push({
           x: Math.random() * window.innerWidth,
@@ -62,14 +64,15 @@ function ParticleBackground() {
     };
 
     const drawParticles = () => {
+      if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       particles.forEach((p) => {
         const dx = p.x - mousePos.current.x;
         const dy = p.y - mousePos.current.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         const force = -1000 / distance;
-        
+
         if (distance < 150) {
           p.x += force * (dx / distance);
           p.y += force * (dy / distance);
@@ -122,21 +125,22 @@ function ParticleBackground() {
 }
 
 export default function Home() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  // On va appliquer un effet de scale juste sur l'image
   const { scrollYProgress } = useScroll();
   const scale = useTransform(scrollYProgress, [0, 1], [1, 1.2]);
 
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
   return (
-    <div className="relative min-h-screen w-full overflow-hidden font-sans">
+    <div className="relative min-h-screen w-full overflow-x-hidden font-sans">
+      {/* Background fixe */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-[#0f0720] to-[#1a0933]" />
       <ParticleBackground />
 
       <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          className="min-h-screen flex items-center justify-center"
-          style={{ scale }}
-        >
+        {/* On ne centre pas de façon forcée toute la grille */}
+        <div className="min-h-screen flex items-center">
           <div className="grid lg:grid-cols-2 gap-16 items-center py-24">
             <motion.div
               ref={ref}
@@ -153,9 +157,7 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                Pablo, développeur full-stack
-                  <br />
-                 
+                  Pablo, développeur full-stack
                 </h1>
               </motion.div>
 
@@ -212,35 +214,36 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            <motion.div
-              className="relative flex justify-center"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <div className="relative">
-                <img
-                  src="/images/photoProfil.jpg"
-                  alt="Pablo Développeur"
-                  className="w-80 h-80 rounded-2xl object-cover relative z-10 border-4 border-white/10 shadow-2xl"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/30 to-purple-500/30 blur-3xl rounded-2xl animate-pulse" />
-                <motion.div
-                  className="absolute -bottom-8 -right-8 bg-gradient-to-r from-pink-600 to-purple-600 p-4 rounded-2xl shadow-xl"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{
-                    repeat: Infinity,
-                    repeatType: "mirror",
-                    duration: 2,
-                  }}
-                >
-                  
-                </motion.div>
-              </div>
-            </motion.div>
+            {/* On applique le scale seulement autour de l'image */}
+            <div className="relative flex justify-center">
+              <motion.div
+                style={{ scale, transformOrigin: "center center" }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                <div className="relative">
+                  <img
+                    src="/images/photoProfil.jpg"
+                    alt="Pablo Développeur"
+                    className="w-80 h-80 rounded-2xl object-cover relative z-10 border-4 border-white/10 shadow-2xl"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/30 to-purple-500/30 blur-3xl rounded-2xl animate-pulse" />
+                  <motion.div
+                    className="absolute -bottom-8 -right-8 bg-gradient-to-r from-pink-600 to-purple-600 p-4 rounded-2xl shadow-xl"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatType: "mirror",
+                      duration: 2,
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </main>
 
       <footer className="relative z-10 border-t border-white/10 bg-gradient-to-b from-black/50 to-transparent">
