@@ -21,3 +21,26 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+@layer utilities {
+  .text-outline {
+    text-shadow: 
+      -1px -1px 0 theme('colors.pink.500'),
+      1px -1px 0 theme('colors.pink.500'),
+      -1px 1px 0 theme('colors.pink.500'),
+      1px 1px 0 theme('colors.pink.500');
+  }
+  
+  .cyber-glitch {
+    animation: glitch 3s infinite;
+  }
+
+  @keyframes glitch {
+    0% { clip-path: inset(10% 0 90% 0); }
+    5% { clip-path: inset(80% 0 5% 0); }
+    10% { clip-path: inset(20% 0 60% 0); }
+    15% { clip-path: inset(50% 0 30% 0); }
+    100% { clip-path: inset(0); }
+  }
+}

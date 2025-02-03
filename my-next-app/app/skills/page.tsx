@@ -1,19 +1,73 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
-interface ParticleData {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
+// Configuration des particules
+class Particle {
+  constructor(
+    public x: number,
+    public y: number,
+    public vx: number,
+    public vy: number,
+    public size: number,
+    public color: string,
+    public alpha: number,
+    public baseSize: number
+  ) {}
 }
 
-function AIParticlesBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const particles = useRef<ParticleData[]>([]);
-  const animationFrameId = useRef<number>(0);
+const ParticleCanvas = ({ colors, behavior }: { colors: string[]; behavior: 'attract' | 'repel' | 'flock' }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particles = useRef<Particle[]>([]);
+  const mousePos = useRef({ x: -1000, y: -1000 });
+
+  const initParticles = useCallback(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    
+    particles.current = Array.from({ length: 100 }).map(() => {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      return new Particle(
+        Math.random() * canvas.width,
+        Math.random() * canvas.height,
+        (Math.random() - 0.5) * 0.3,
+        (Math.random() - 0.5) * 0.3,
+        Math.random() * 3 + 2,
+        color,
+        0,
+        Math.random() * 3 + 2
+      );
+    });
+  }, [colors]);
+
+  const updateParticles = useCallback(() => {
+    particles.current.forEach((p) => {
+      // Comportement différent selon la section
+      switch(behavior) {
+        case 'attract':
+          p.vx += (mousePos.current.x - p.x) * 0.0001;
+          p.vy += (mousePos.current.y - p.y) * 0.0001;
+          break;
+        case 'repel':
+          const dx = mousePos.current.x - p.x;
+          const dy = mousePos.current.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            p.vx -= (dx / dist) * 0.1;
+            p.vy -= (dy / dist) * 0.1;
+          }
+          break;
+        case 'flock':
+          // Logique de flocking...
+          break;
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha = Math.min(p.alpha + 0.02, 0.8);
+    });
+  }, [behavior]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,238 +75,225 @@ function AIParticlesBackground() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const numParticles = 40;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      updateParticles();
 
-    function init() {
-      particles.current = [];
-      for (let i = 0; i < numParticles; i++) {
-        particles.current.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-        });
-      }
-    }
-
-    function animate() {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-      for (let i = 0; i < particles.current.length; i++) {
-        const p = particles.current[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
-        if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
-
+      particles.current.forEach((p) => {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2, false);
-        ctx.fillStyle = '#ff6ec7';
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.color}${Math.floor(p.alpha * 255).toString(16).padStart(2, '0')}`;
         ctx.fill();
+      });
 
-        for (let j = i + 1; j < particles.current.length; j++) {
-          const p2 = particles.current[j];
-          const dist = Math.sqrt((p.x - p2.x) ** 2 + (p.y - p2.y) ** 2);
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-            ctx.stroke();
-          }
-        }
-      }
+      requestAnimationFrame(animate);
+    };
 
-      animationFrameId.current = requestAnimationFrame(animate);
-    }
-
-    function handleResize() {
+    const handleResize = () => {
       if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      init();
-    }
+      initParticles();
+    };
 
     window.addEventListener('resize', handleResize);
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    init();
+    handleResize();
     animate();
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId.current);
-    };
-  }, []);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [initParticles, updateParticles]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
+      className="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-1000"
+      onMouseMove={(e) => {
+        mousePos.current = { x: e.clientX, y: e.clientY };
+      }}
     />
   );
-}
+};
+
+const SkillSection = ({ 
+  title, 
+  description, 
+  particles, 
+  theme,
+  children 
+}: {
+  title: string;
+  description: string;
+  particles: { colors: string[]; behavior: 'attract' | 'repel' | 'flock' };
+  theme: 'cyber' | 'neon' | 'matrix' | 'space';
+  children: React.ReactNode;
+}) => {
+  const [hovered, setHovered] = useState(false);
+  
+  return (
+    <motion.section 
+      className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden"
+      onViewportEnter={() => setHovered(true)}
+      onViewportLeave={() => setHovered(false)}
+      viewport={{ once: true, margin: "-30% 0px" }}
+    >
+      <ParticleCanvas {...particles} />
+      
+      <div className="relative z-10 max-w-7xl mx-auto w-full">
+        <motion.div
+          className={`p-12 rounded-3xl backdrop-blur-xl border ${
+            theme === 'cyber' ? 'border-pink-500/30' :
+            theme === 'neon' ? 'border-cyan-500/30' :
+            'border-emerald-500/30'
+          }`}
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          style={{
+            background: `linear-gradient(45deg, ${theme === 'cyber' ? '#1a1a1a' : '#000'}, ${theme === 'neon' ? '#000b1a' : '#00110b'})`,
+            boxShadow: `0 0 50px ${theme === 'cyber' ? '#ff61d840' : '#00ff9d30'}`
+          }}
+        >
+          <motion.h2 
+            className={`text-6xl font-bold mb-8 ${
+              theme === 'cyber' ? 'text-pink-400' :
+              theme === 'neon' ? 'text-cyan-400' :
+              'text-emerald-400'
+            }`}
+            animate={hovered ? { textShadow: "0 0 20px currentColor" } : {}}
+            transition={{ duration: 1 }}
+          >
+            {title}
+          </motion.h2>
+          
+          <motion.p
+            className="text-xl text-gray-300 mb-12 max-w-3xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            {description}
+          </motion.p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {children}
+          </div>
+        </motion.div>
+      </div>
+    </motion.section>
+  );
+};
+
+const SkillCard = ({ title, description, theme }: { title: string; description: string; theme: string }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div
+      className="relative p-8 rounded-xl backdrop-blur-lg border bg-black/20 hover:bg-black/40 transition-all"
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      animate={{
+        borderColor: isHovered ? 
+          theme === 'cyber' ? '#ff61d8' : 
+          theme === 'neon' ? '#00f7ff' : '#00ff9d' : 'transparent',
+        y: isHovered ? -10 : 0
+      }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 to-transparent" />
+      
+      <h3 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${
+        theme === 'cyber' ? 'from-pink-400 to-purple-400' :
+        theme === 'neon' ? 'from-cyan-400 to-blue-400' :
+        'from-green-400 to-emerald-400'
+      } bg-clip-text text-transparent`}>
+        {title}
+      </h3>
+      <p className="text-gray-300">{description}</p>
+      
+      <motion.div
+        className="absolute inset-0 rounded-xl border pointer-events-none"
+        animate={{
+          opacity: isHovered ? 1 : 0,
+          borderColor: theme === 'cyber' ? '#ff61d8' : 
+                      theme === 'neon' ? '#00f7ff' : '#00ff9d'
+        }}
+        transition={{ duration: 0.3 }}
+      />
+    </motion.div>
+  );
+};
 
 export default function SkillsPage() {
   return (
-    <motion.div 
-      className="relative font-sans text-white overflow-x-hidden overflow-y-auto"
-      initial={{opacity:0}}
-      animate={{opacity:1}}
-      transition={{duration:0.8}}
-    >
-      {/* Section HERO */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-black via-purple-900 to-indigo-900 px-6 text-center">
-        <motion.h1
-          className="text-5xl md:text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-lg"
-          initial={{opacity:0,y:-50}}
-          animate={{opacity:1,y:0}}
-          transition={{duration:1}}
-        >
-          Mes Compétences
-        </motion.h1>
-        <motion.p
-          className="mt-6 text-gray-300 max-w-3xl mx-auto leading-relaxed"
-          initial={{opacity:0,y:20}}
-          animate={{opacity:1,y:0}}
-          transition={{duration:1.2}}
-        >
-          Explorez mes différentes expertises, chacune présentée dans un univers visuel unique reflétant son essence technologique.
-        </motion.p>
-      </section>
+    <div className="relative min-h-screen bg-black text-white overflow-hidden">
+      <SkillSection
+        title="Développement Web"
+        description="Création d'applications modernes avec les dernières technologies"
+        particles={{ colors: ['#ff61d8', '#7d6fff'], behavior: 'attract' }}
+        theme="cyber"
+      >
+        <SkillCard
+          title="React/Next.js"
+          description="Applications full-stack performantes"
+          theme="cyber"
+        />
+        <SkillCard
+          title="TypeScript"
+          description="Typage statique avancé"
+          theme="cyber"
+        />
+        <SkillCard
+          title="Node.js"
+          description="Backend haute performance"
+          theme="cyber"
+        />
+      </SkillSection>
 
-      {/* UNIVERSE 1: Web Development */}
-      <section className="relative py-20 px-6 bg-[#141414]">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_#222_0%,_#000_100%)] opacity-90"></div>
+      <SkillSection
+        title="Intelligence Artificielle"
+        description="Développement de modèles intelligents et solutions ML"
+        particles={{ colors: ['#00f7ff', '#00ff9d'], behavior: 'repel' }}
+        theme="neon"
+      >
+        <SkillCard
+          title="Python/TensorFlow"
+          description="Deep Learning & Réseaux de neurones"
+          theme="neon"
+        />
+        <SkillCard
+          title="Data Science"
+          description="Analyse de données complexes"
+          theme="neon"
+        />
+        <SkillCard
+          title="NLP"
+          description="Traitement du langage naturel"
+          theme="neon"
+        />
+      </SkillSection>
 
-        <motion.div
-          className="max-w-5xl mx-auto text-center relative z-10"
-          initial={{opacity:0,y:40}}
-          whileInView={{opacity:1,y:0}}
-          transition={{duration:0.8}}
-          viewport={{ once: true }}
-        >
-          <div className="relative inline-block">
-            <span className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 blur-md opacity-30 rounded-lg"></span>
-            <h2 className="relative text-4xl font-extrabold text-white">Web Development</h2>
-          </div>
-          <p className="text-gray-200 mt-4 max-w-2xl mx-auto">
-            Créer des expériences web modernes et performantes grâce à React, Next.js, Node.js, TypeScript, Tailwind CSS, GraphQL...
-          </p>
-        </motion.div>
-
-        <motion.div
-          className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10"
-          initial={{opacity:0,y:20}}
-          whileInView={{opacity:1,y:0}}
-          transition={{duration:0.8,delay:0.2}}
-          viewport={{ once: true }}
-        >
-          <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg backdrop-blur-md hover:scale-105 transform transition">
-            <h3 className="text-xl font-bold text-pink-400">React</h3>
-            <p className="text-gray-200 mt-2 text-sm">Interfaces dynamiques</p>
-          </div>
-          <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg backdrop-blur-md hover:scale-105 transform transition">
-            <h3 className="text-xl font-bold text-purple-400">Next.js</h3>
-            <p className="text-gray-200 mt-2 text-sm">SSR & SSG pour React</p>
-          </div>
-          <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg backdrop-blur-md hover:scale-105 transform transition">
-            <h3 className="text-xl font-bold text-blue-400">TypeScript</h3>
-            <p className="text-gray-200 mt-2 text-sm">Typage statique</p>
-          </div>
-          <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg backdrop-blur-md hover:scale-105 transform transition">
-            <h3 className="text-xl font-bold text-green-400">Node.js</h3>
-            <p className="text-gray-200 mt-2 text-sm">Back-end JS performant</p>
-          </div>
-          <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg backdrop-blur-md hover:scale-105 transform transition">
-            <h3 className="text-xl font-bold text-cyan-400">Tailwind CSS</h3>
-            <p className="text-gray-200 mt-2 text-sm">CSS utility-first</p>
-          </div>
-          <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg backdrop-blur-md hover:scale-105 transform transition">
-            <h3 className="text-xl font-bold text-pink-300">GraphQL</h3>
-            <p className="text-gray-200 mt-2 text-sm">APIs flexibles</p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* UNIVERSE 2: C++ / C# */}
-      <section className="relative py-20 px-6 bg-gray-900 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none bg-[conic-gradient(from_var(--start,_deg),_#333,_#000)] opacity-80"></div>
-        <motion.div
-          className="max-w-5xl mx-auto text-center relative z-10"
-          initial={{opacity:0,y:40}}
-          whileInView={{opacity:1,y:0}}
-          transition={{duration:0.8}}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-4xl font-extrabold text-white">Langages Systèmes : C++ & C#</h2>
-          <p className="text-gray-300 mt-4 max-w-2xl mx-auto">
-            Maîtrise des langages bas-niveau pour des applications performantes, moteurs de jeu, services robustes.
-          </p>
-        </motion.div>
-        <div className="absolute inset-0 pointer-events-none bg-[url('/images/hex-grid.png')] bg-center bg-cover opacity-10"></div>
-        <motion.div
-          className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10"
-          initial={{opacity:0,y:20}}
-          whileInView={{opacity:1,y:0}}
-          transition={{duration:0.8,delay:0.2}}
-          viewport={{ once: true }}
-        >
-          <div className="bg-gray-800 bg-opacity-60 p-8 rounded-lg backdrop-blur-md hover:scale-105 transition transform">
-            <h3 className="text-2xl font-bold text-blue-500">C++</h3>
-            <p className="text-gray-200 mt-4 leading-relaxed">
-              Performances, contrôle mémoire, moteurs de jeux, librairies natives.
-            </p>
-          </div>
-          <div className="bg-gray-800 bg-opacity-60 p-8 rounded-lg backdrop-blur-md hover:scale-105 transition transform">
-            <h3 className="text-2xl font-bold text-green-500">C#</h3>
-            <p className="text-gray-200 mt-4 leading-relaxed">
-              Framework .NET, Unity, applications desktop.
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* UNIVERSE 3: Machine Learning (Python & TensorFlow) */}
-      <section className="relative py-20 px-6 bg-[#1e0034] overflow-hidden">
-        <AIParticlesBackground />
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-black opacity-80"></div>
-
-        <motion.div
-          className="max-w-5xl mx-auto text-center relative z-10"
-          initial={{opacity:0,y:40}}
-          whileInView={{opacity:1,y:0}}
-          transition={{duration:0.8}}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-4xl font-extrabold text-white">Machine Learning & IA</h2>
-          <p className="text-gray-300 mt-4 max-w-2xl mx-auto">
-            Concevoir, entraîner et déployer des modèles ML avec Python, TensorFlow.
-          </p>
-        </motion.div>
-
-        <motion.div
-          className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10"
-          initial={{opacity:0,y:20}}
-          whileInView={{opacity:1,y:0}}
-          transition={{duration:0.8,delay:0.2}}
-          viewport={{ once: true }}
-        >
-          <div className="bg-black bg-opacity-40 p-8 rounded-lg backdrop-blur-md hover:scale-105 transition transform">
-            <h3 className="text-2xl font-bold text-pink-400">Python</h3>
-            <p className="text-gray-200 mt-4">
-              Data science, prototypage rapide, écosystème riche.
-            </p>
-          </div>
-          <div className="bg-black bg-opacity-40 p-8 rounded-lg backdrop-blur-md hover:scale-105 transition transform">
-            <h3 className="text-2xl font-bold text-yellow-400">TensorFlow</h3>
-            <p className="text-gray-200 mt-4">
-              Réseaux de neurones, NLP, vision par ordinateur, déploiement de modèles.
-            </p>
-          </div>
-        </motion.div>
-      </section>
-    </motion.div>
+      <SkillSection
+        title="Systèmes Embarqués"
+        description="Développement bas niveau et solutions matérielles"
+        particles={{ colors: ['#00ff9d', '#0066ff'], behavior: 'flock' }}
+        theme="matrix"
+      >
+        <SkillCard
+          title="C++20/23"
+          description="Optimisation système"
+          theme="matrix"
+        />
+        <SkillCard
+          title="Rust"
+          description="Sécurité mémoire"
+          theme="matrix"
+        />
+        <SkillCard
+          title="IoT"
+          description="Objets connectés"
+          theme="matrix"
+        />
+      </SkillSection>
+    </div>
   );
 }

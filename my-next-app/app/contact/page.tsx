@@ -1,33 +1,76 @@
 'use client';
-
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 
+// Variants d'animation
+const floatingVariants = {
+  float: {
+    y: [-15, 15, -15],
+    transition: {
+      duration: 4,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }
+  }
+};
+
+const particleVariants = {
+  hidden: { opacity: 0 },
+  visible: (i: number) => ({
+    opacity: [0.4, 0.8, 0.4],
+    transition: {
+      delay: i * 0.1,
+      duration: 2 + Math.random() * 2,
+      repeat: Infinity
+    }
+  })
+};
+
+const formItemVariants = {
+  hidden: { opacity: 0, x: -30 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: i * 0.2 + 0.3,
+      duration: 0.6
+    }
+  })
+};
+
 export default function Contact() {
+  const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSending, setIsSending] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setMounted(true);
+      setParticles(
+        Array.from({ length: 25 }, (_, i) => ({
+          id: i,
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight
+        }))
+      );
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
 
     try {
-      // Appel à EmailJS pour envoyer le message
-      const result = await emailjs.send(
-        'service_n17yb4c', // Ton Service ID
-        'template_z57vnwo', // Ton Template ID
-        {
-          name: formData.name,
-          email: formData.email,
-          message: formData.message,
-        },
-        '_BEiR54v6SUVi6O6q' // Ta clé publique
+      await emailjs.send(
+        'service_n17yb4c',
+        'template_z57vnwo',
+        formData,
+        '_BEiR54v6SUVi6O6q'
       );
-
-      console.log(result.text);
-      setSuccess(true); // Affiche un message de succès
+      setSuccess(true);
     } catch (error) {
       console.error('Erreur lors de l\'envoi :', error);
       alert('Une erreur s\'est produite lors de l\'envoi du message.');
@@ -36,110 +79,167 @@ export default function Contact() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="relative min-h-screen flex flex-col justify-center bg-gradient-to-br from-black via-purple-900 to-indigo-900 text-white font-sans overflow-hidden">
-      {/* Arrière-plan décoratif */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-black via-purple-900 to-indigo-900 opacity-70" />
+      {/* Particules animées */}
+      {particles.map(({ id, x, y }) => (
+        <motion.div
+          key={id}
+          className="absolute w-2 h-2 bg-pink-400 rounded-full blur-[1px]"
+          initial="hidden"
+          animate="visible"
+          variants={particleVariants}
+          custom={id % 10}
+          style={{ left: x, top: y }}
+        />
+      ))}
 
-      {/* Contenu principal */}
       <main className="relative z-10 max-w-4xl mx-auto py-20 px-6">
-        <motion.h1
-          className="text-5xl md:text-6xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-400 to-indigo-500 drop-shadow-lg"
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
+        <motion.div
+          variants={floatingVariants}
+          animate="float"
+          className="relative"
         >
-          Contactez-moi
-        </motion.h1>
-
-        <motion.p
-          className="text-gray-200 text-lg md:text-xl max-w-2xl mx-auto text-center mt-6 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2 }}
-        >
-          Vous avez un projet, une idée ou simplement une question ? En tant que développeur web passionné, je suis prêt à donner vie à vos idées. Remplissez le formulaire ci-dessous et créons ensemble des expériences numériques inoubliables.
-        </motion.p>
-
-        {success ? (
-          <motion.div
-            className="mt-12 p-8 bg-green-600 bg-opacity-70 rounded-xl shadow-xl backdrop-blur-md text-center text-white"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
+          <motion.h1
+            className="text-5xl md:text-6xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-400 to-indigo-500 drop-shadow-lg mb-12"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
           >
-            Merci pour votre message ! Je vous répondrai dès que possible.
-          </motion.div>
-        ) : (
-          <motion.form
-            onSubmit={handleSubmit}
-            className="mt-12 p-8 bg-gray-800 bg-opacity-70 rounded-xl shadow-xl backdrop-blur-md space-y-8"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-          >
-            <div>
-              <label className="block mb-2 font-semibold text-pink-400">Nom</label>
-              <input
-                type="text"
-                placeholder="Votre nom"
-                className="w-full px-4 py-3 rounded border border-gray-700 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                aria-label="Votre nom"
-              />
-            </div>
+            Contactez-moi
+          </motion.h1>
+        </motion.div>
 
-            <div>
-              <label className="block mb-2 font-semibold text-purple-400">Email</label>
-              <input
-                type="email"
-                placeholder="Votre email"
-                className="w-full px-4 py-3 rounded border border-gray-700 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                aria-label="Votre email"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-2 font-semibold text-indigo-400">Message</label>
-              <textarea
-                placeholder="Décrivez votre projet ou votre demande..."
-                className="w-full px-4 py-3 rounded border border-gray-700 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                rows={5}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                required
-                aria-label="Votre message"
-              />
-            </div>
-
-            <div className="text-center mt-10">
-              <button
-                type="submit"
-                disabled={isSending}
-                className={`inline-block px-8 py-4 rounded-full shadow-md font-semibold text-white transform hover:scale-105 transition-transform ${
-                  isSending
-                    ? 'bg-gray-600 cursor-not-allowed'
-                    : 'bg-pink-600 hover:shadow-pink-500/50'
-                }`}
-                aria-label="Envoyer le message"
+        <AnimatePresence mode='wait'>
+          {success ? (
+            <motion.div
+              key="success"
+              className="mt-12 p-8 bg-green-600 bg-opacity-70 rounded-xl shadow-xl backdrop-blur-md text-center text-white"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.5 }}
+            >
+              🎉 Merci pour votre message ! Je vous répondrai dès que possible.
+              <motion.div
+                className="mt-4 text-4xl"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
               >
-                {isSending ? 'Envoi...' : 'Envoyer'}
-              </button>
-            </div>
-          </motion.form>
-        )}
+                💌
+              </motion.div>
+            </motion.div>
+          ) : (
+            <motion.form
+              key="form"
+              onSubmit={handleSubmit}
+              className="mt-12 p-8 bg-gray-800 bg-opacity-70 rounded-xl shadow-xl backdrop-blur-md space-y-8 relative overflow-hidden"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.div
+                className="absolute inset-0 border-2 border-transparent rounded-xl pointer-events-none"
+                animate={{
+                  borderColor: ['#ec4899', '#a855f7', '#6366f1', '#ec4899'],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity
+                }}
+                style={{
+                  background: `linear-gradient(45deg, #ec4899, #a855f7, #6366f1)`,
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  maskComposite: 'exclude',
+                }}
+              />
+
+              {['name', 'email', 'message'].map((field, i) => (
+                <motion.div
+                  key={field}
+                  variants={formItemVariants}
+                  custom={i}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <label className={`block mb-2 font-semibold text-${{
+                    name: 'pink',
+                    email: 'purple',
+                    message: 'indigo'
+                  }[field]}-400`}>
+                    {{
+                      name: 'Nom',
+                      email: 'Email',
+                      message: 'Message'
+                    }[field]}
+                  </label>
+                  {field !== 'message' ? (
+                    <input
+                      type={field === 'email' ? 'email' : 'text'}
+                      placeholder={`Votre ${field === 'email' ? 'email' : 'nom'}`}
+                      className="w-full px-4 py-3 rounded border border-gray-700 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:shadow-lg transition-all"
+                      value={formData[field as keyof typeof formData]}
+                      onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                      required
+                    />
+                  ) : (
+                    <textarea
+                      placeholder="Décrivez votre projet ou votre demande..."
+                      className="w-full px-4 py-3 rounded border border-gray-700 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:shadow-lg transition-all"
+                      rows={5}
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      required
+                    />
+                  )}
+                </motion.div>
+              ))}
+
+              <motion.div 
+                className="text-center mt-10"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <button
+                  type="submit"
+                  disabled={isSending}
+                  className={`relative inline-block px-8 py-4 rounded-full shadow-md font-semibold text-white overflow-hidden transition-all ${
+                    isSending ? 'bg-gray-600' : 'bg-gradient-to-r from-pink-600 to-indigo-600'
+                  }`}
+                >
+                  <span className="relative z-10">
+                    {isSending ? 'Envoi en cours...' : 'Envoyer le message'}
+                  </span>
+                  {isSending && (
+                    <motion.div
+                      className="absolute h-1 bg-purple-400 bottom-0 left-0"
+                      animate={{
+                        width: ['0%', '100%']
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity
+                      }}
+                    />
+                  )}
+                </button>
+              </motion.div>
+            </motion.form>
+          )}
+        </AnimatePresence>
       </main>
 
-      <footer className="text-center text-gray-400 text-sm py-6 border-t border-gray-700 mt-20">
+      <motion.footer 
+        className="text-center text-gray-400 text-sm py-6 mt-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+      >
         © {new Date().getFullYear()} Pablo - Tous droits réservés.
-      </footer>
+      </motion.footer>
     </div>
   );
 }
