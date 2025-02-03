@@ -210,8 +210,8 @@ export default function Projects() {
         detailedDescription:
           'Ce projet vous permet de comparer différents coûts en ville grâce à une interface intuitive et des filtres avancés.',
         images: [
-          { src: '/images/costcrafters-1.jpg', alt: "Vue d'ensemble du comparateur" },
-          { src: '/images/costcrafters-2.jpg', alt: 'Détail des coûts' },
+          { src: '/images/comparaisonCout.png', alt: "Vue d'ensemble du comparateur" },
+          { src: '/images/costCrafter2.png', alt: 'Détail des coûts' },
         ],
       },
       {
