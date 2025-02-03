@@ -21,6 +21,18 @@ interface Project {
   detailedDescription: string;
 }
 
+// Nouvelle interface pour typer les particules
+interface Particle {
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  velocity: {
+    x: number;
+    y: number;
+  };
+}
+
 const ANIMATION_VARIANTS = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
@@ -69,7 +81,7 @@ const ParticleBackground = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let particles: any[] = [];
+    let particles: Particle[] = [];
     let frameId: number;
 
     const init = () => {
@@ -89,11 +101,11 @@ const ParticleBackground = () => {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(particle => {
+      particles.forEach((particle) => {
         const dx = particle.x - mousePos.current.x;
         const dy = particle.y - mousePos.current.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < 100) {
           particle.x += dx * 0.01;
           particle.y += dy * 0.01;
@@ -133,7 +145,7 @@ const ParticleBackground = () => {
    Composant ProjectCard animé
 ---------------------------------------- */
 const ProjectCard = ({ project, onClick }: { project: Project; onClick: () => void }) => {
-  const cardRef = useRef(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: cardRef,
     offset: ['0 1', '0.8 1'],
@@ -181,7 +193,7 @@ const ProjectCard = ({ project, onClick }: { project: Project; onClick: () => vo
 export default function Projects() {
   const [activeTab, setActiveTab] = useState<ProjectTab>('web');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const projects: Record<ProjectTab, Project[]> = {
     web: [
@@ -189,21 +201,23 @@ export default function Projects() {
         title: 'CostCrafter - Comparateur de coûts',
         description: 'Plateforme interactive de comparaison urbaine',
         link: 'https://costcrafters.vercel.app',
-        detailedDescription: 'Ce projet vous permet de comparer différents coûts en ville grâce à une interface intuitive et des filtres avancés.',
+        detailedDescription:
+          'Ce projet vous permet de comparer différents coûts en ville grâce à une interface intuitive et des filtres avancés.',
         images: [
           { src: '/images/costcrafters-1.jpg', alt: "Vue d'ensemble du comparateur" },
-          { src: '/images/costcrafters-2.jpg', alt: 'Détail des coûts' }
-        ]
+          { src: '/images/costcrafters-2.jpg', alt: 'Détail des coûts' },
+        ],
       },
       {
         title: 'Finance Forecast Hub',
         description: "Site d'analyse financière et prévisions économiques",
         link: 'https://finance-forecast-hub.vercel.app/',
-        detailedDescription: "Ce site est un prototype. Avec les API gratuites, il n'est pas possible d'obtenir des données précises, mais il illustre mon travail de développement et la mise en place d'une analyse financière avancée et de prévisions économiques en temps réel.",
+        detailedDescription:
+          "Ce site est un prototype. Avec les API gratuites, il n'est pas possible d'obtenir des données précises, mais il illustre mon travail de développement et la mise en place d'une analyse financière avancée et de prévisions économiques en temps réel.",
         images: [
           { src: '/images/finance-forecast-hub-1.jpg', alt: "Vue d'ensemble de Finance Forecast Hub" },
-          { src: '/images/finance-forecast-hub-2.jpg', alt: 'Graphiques financiers' }
-        ]
+          { src: '/images/finance-forecast-hub-2.jpg', alt: 'Graphiques financiers' },
+        ],
       },
     ],
     ia: [
@@ -211,11 +225,12 @@ export default function Projects() {
         title: 'Chatbot IA Intelligent',
         description: 'Solution conversationnelle avancée',
         link: 'https://chatbot.example.com',
-        detailedDescription: "Ce chatbot utilise l'intelligence artificielle pour offrir des réponses personnalisées et pertinentes à vos questions.",
+        detailedDescription:
+          "Ce chatbot utilise l'intelligence artificielle pour offrir des réponses personnalisées et pertinentes à vos questions.",
         images: [
           { src: '/images/chatbot-1.jpg', alt: 'Interface du chatbot' },
-          { src: '/images/chatbot-2.jpg', alt: 'Conversation en cours' }
-        ]
+          { src: '/images/chatbot-2.jpg', alt: 'Conversation en cours' },
+        ],
       },
     ],
   };
@@ -257,7 +272,7 @@ export default function Projects() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={`relative px-8 py-3 rounded-full font-semibold transition-colors duration-300 ${
-                activeTab === tab 
+                activeTab === tab
                   ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white'
                   : 'bg-white/5 hover:bg-white/10 text-gray-300'
               }`}
@@ -275,11 +290,8 @@ export default function Projects() {
           exit="exit"
           variants={{
             hidden: { opacity: 0 },
-            visible: { 
-              opacity: 1,
-              transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-            },
-            exit: { opacity: 0 }
+            visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
+            exit: { opacity: 0 },
           }}
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
         >
@@ -289,10 +301,7 @@ export default function Projects() {
               variants={ANIMATION_VARIANTS}
               layoutId={`project-${index}`}
             >
-              <ProjectCard 
-                project={project} 
-                onClick={() => setSelectedProject(project)}
-              />
+              <ProjectCard project={project} onClick={() => setSelectedProject(project)} />
             </motion.div>
           ))}
         </motion.div>
@@ -310,9 +319,9 @@ export default function Projects() {
                 layoutId={`project-${projects[activeTab].indexOf(selectedProject)}`}
                 className="relative w-full max-w-4xl bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-white/10 shadow-2xl"
                 initial={{ scale: 0.9 }}
-                animate={{ 
+                animate={{
                   scale: 1,
-                  transition: { type: 'spring', stiffness: 300, damping: 25 }
+                  transition: { type: 'spring', stiffness: 300, damping: 25 },
                 }}
                 exit={{ scale: 0.9 }}
                 dragConstraints={containerRef}
@@ -338,10 +347,10 @@ export default function Projects() {
                     {selectedProject.detailedDescription}
                   </p>
                   {selectedProject.link && selectedProject.link !== '' && (
-                    <a 
-                      href={selectedProject.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={selectedProject.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-indigo-400 hover:underline"
                     >
                       Visiter le projet
