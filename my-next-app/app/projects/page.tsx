@@ -21,7 +21,7 @@ interface Project {
   detailedDescription: string;
 }
 
-// Nouvelle interface pour typer les particules
+// Interface pour typer les particules
 interface Particle {
   x: number;
   y: number;
@@ -33,17 +33,20 @@ interface Particle {
   };
 }
 
-const ANIMATION_VARIANTS = {
+/**
+ * Variantes d'animation pour les cartes individuelles.
+ * On retire l'animation d'entrée/sortie globale sur le parent
+ * qui pouvait causer l'écran noir entre les onglets.
+ */
+const CARD_VARIANTS = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.95 },
   hover: { scale: 1.02, rotate: -0.5 },
   tap: { scale: 0.98 },
 };
 
 /* ---------------------------------------
    Composant PhotoSection
-   Section photo avec animations innovantes
 ---------------------------------------- */
 const PhotoSection = ({ images }: { images: ImageType[] }) => {
   return (
@@ -69,7 +72,7 @@ const PhotoSection = ({ images }: { images: ImageType[] }) => {
 };
 
 /* ---------------------------------------
-   Composant ParticleBackground amélioré
+   Composant ParticleBackground
 ---------------------------------------- */
 const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -142,7 +145,7 @@ const ParticleBackground = () => {
 };
 
 /* ---------------------------------------
-   Composant ProjectCard animé
+   Composant ProjectCard
 ---------------------------------------- */
 const ProjectCard = ({ project, onClick }: { project: Project; onClick: () => void }) => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -158,6 +161,9 @@ const ProjectCard = ({ project, onClick }: { project: Project; onClick: () => vo
     <motion.div
       ref={cardRef}
       style={{ scale: scaleProgress, opacity: opacityProgress }}
+      variants={CARD_VARIANTS}
+      initial="hidden"
+      animate="visible"
       whileHover="hover"
       whileTap="tap"
       onClick={onClick}
@@ -282,29 +288,19 @@ export default function Projects() {
           ))}
         </motion.div>
 
-        {/* Grid des projets */}
-        <motion.div
-          key={activeTab}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
-            exit: { opacity: 0 },
-          }}
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-        >
+        {/*
+          Au lieu d'animer tout le conteneur, on le laisse
+          simplement visible et on anime uniquement les cartes.
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {projects[activeTab].map((project, index) => (
-            <motion.div
+            <ProjectCard
               key={index}
-              variants={ANIMATION_VARIANTS}
-              layoutId={`project-${index}`}
-            >
-              <ProjectCard project={project} onClick={() => setSelectedProject(project)} />
-            </motion.div>
+              project={project}
+              onClick={() => setSelectedProject(project)}
+            />
           ))}
-        </motion.div>
+        </div>
 
         {/* Modal de détail */}
         <AnimatePresence>
@@ -316,7 +312,6 @@ export default function Projects() {
               className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
             >
               <motion.div
-                layoutId={`project-${projects[activeTab].indexOf(selectedProject)}`}
                 className="relative w-full max-w-4xl bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-white/10 shadow-2xl"
                 initial={{ scale: 0.9 }}
                 animate={{
@@ -339,14 +334,13 @@ export default function Projects() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1, transition: { delay: 0.2 } }}
+                  exit={{ opacity: 0 }}
                 >
                   <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
                     {selectedProject.title}
                   </h2>
-                  <p className="text-gray-300 mb-4">
-                    {selectedProject.detailedDescription}
-                  </p>
-                  {selectedProject.link && selectedProject.link !== '' && (
+                  <p className="text-gray-300 mb-4">{selectedProject.detailedDescription}</p>
+                  {selectedProject.link && (
                     <a
                       href={selectedProject.link}
                       target="_blank"
