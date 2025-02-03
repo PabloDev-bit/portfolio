@@ -167,7 +167,7 @@ export default function Home() {
               >
                 Je m&apos;appelle Pablo, développeur full-stack spécialisé dans
                 la création d&apos;applications web immersives et performantes.
-                Chaque pixel compte, chaque interaction matière.
+                Chaque ligne compte.
               </motion.p>
 
               <motion.div
