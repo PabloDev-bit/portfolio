@@ -1,299 +1,197 @@
-'use client';
+"use client";
+// =============================================================
+// Skills Page – Cosmic Accordion Theme
+// =============================================================
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
-import { motion } from 'framer-motion';
-import { useEffect, useRef, useState, useCallback } from 'react';
-
-// Configuration des particules
-class Particle {
-  constructor(
-    public x: number,
-    public y: number,
-    public vx: number,
-    public vy: number,
-    public size: number,
-    public color: string,
-    public alpha: number,
-    public baseSize: number
-  ) {}
-}
-
-const ParticleCanvas = ({ colors, behavior }: { colors: string[]; behavior: 'attract' | 'repel' | 'flock' }) => {
+// INLINE ParticleBackground: full-screen starfield
+function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particles = useRef<Particle[]>([]);
-  const mousePos = useRef({ x: -1000, y: -1000 });
-
-  const initParticles = useCallback(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    
-    particles.current = Array.from({ length: 100 }).map(() => {
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      return new Particle(
-        Math.random() * canvas.width,
-        Math.random() * canvas.height,
-        (Math.random() - 0.5) * 0.3,
-        (Math.random() - 0.5) * 0.3,
-        Math.random() * 3 + 2,
-        color,
-        0,
-        Math.random() * 3 + 2
-      );
-    });
-  }, [colors]);
-
-  const updateParticles = useCallback(() => {
-    particles.current.forEach((p) => {
-      // Comportement différent selon la section
-      switch(behavior) {
-        case 'attract':
-          p.vx += (mousePos.current.x - p.x) * 0.0001;
-          p.vy += (mousePos.current.y - p.y) * 0.0001;
-          break;
-        case 'repel':
-          const dx = mousePos.current.x - p.x;
-          const dy = mousePos.current.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 150) {
-            p.vx -= (dx / dist) * 0.1;
-            p.vy -= (dy / dist) * 0.1;
-          }
-          break;
-        case 'flock':
-          // Logique de flocking...
-          break;
-      }
-
-      p.x += p.vx;
-      p.y += p.vy;
-      p.alpha = Math.min(p.alpha + 0.02, 0.8);
-    });
-  }, [behavior]);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      updateParticles();
-
-      particles.current.forEach((p) => {
+    let animId: number;
+    const dpr = window.devicePixelRatio || 1;
+    const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
+    const init = () => {
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.scale(dpr, dpr);
+      stars.length = 0;
+      for (let i = 0; i < 120; i++) {
+        stars.push({
+          x: Math.random() * canvas.offsetWidth,
+          y: Math.random() * canvas.offsetHeight,
+          r: Math.random() * 1.2 + 0.3,
+          opacity: Math.random() * 0.5 + 0.3,
+          vx: (Math.random() - 0.5) * 0.1,
+          vy: (Math.random() - 0.5) * 0.1,
+        });
+      }
+    };
+    const render = () => {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+      stars.forEach((s) => {
+        s.x += s.vx;
+        s.y += s.vy;
+        if (s.x < 0 || s.x > canvas.offsetWidth) s.vx *= -1;
+        if (s.y < 0 || s.y > canvas.offsetHeight) s.vy *= -1;
+        ctx.globalAlpha = s.opacity;
+        ctx.fillStyle = "#ffffff";
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `${p.color}${Math.floor(p.alpha * 255).toString(16).padStart(2, '0')}`;
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
       });
-
-      requestAnimationFrame(animate);
+      animId = requestAnimationFrame(render);
     };
-
-    const handleResize = () => {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initParticles();
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    animate();
-
-    return () => window.removeEventListener('resize', handleResize);
-  }, [initParticles, updateParticles]);
-
+    init();
+    render();
+    window.addEventListener("resize", () => { init(); });
+    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
+  }, []);
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-1000"
-      onMouseMove={(e) => {
-        mousePos.current = { x: e.clientX, y: e.clientY };
-      }}
+      className="absolute inset-0 w-full h-full pointer-events-none"
     />
   );
-};
+}
 
-const SkillSection = ({ 
-  title, 
-  description, 
-  particles, 
-  theme,
-  children 
-}: {
-  title: string;
-  description: string;
-  particles: { colors: string[]; behavior: 'attract' | 'repel' | 'flock' };
-  theme: 'cyber' | 'neon' | 'matrix' | 'space';
-  children: React.ReactNode;
-}) => {
-  const [hovered, setHovered] = useState(false);
-  
-  return (
-    <motion.section 
-      className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden"
-      onViewportEnter={() => setHovered(true)}
-      onViewportLeave={() => setHovered(false)}
-      viewport={{ once: true, margin: "-30% 0px" }}
-    >
-      <ParticleCanvas {...particles} />
-      
-      <div className="relative z-10 max-w-7xl mx-auto w-full">
-        <motion.div
-          className={`p-12 rounded-3xl backdrop-blur-xl border ${
-            theme === 'cyber' ? 'border-pink-500/30' :
-            theme === 'neon' ? 'border-cyan-500/30' :
-            'border-emerald-500/30'
-          }`}
-          initial={{ opacity: 0, y: 100 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          style={{
-            background: `linear-gradient(45deg, ${theme === 'cyber' ? '#1a1a1a' : '#000'}, ${theme === 'neon' ? '#000b1a' : '#00110b'})`,
-            boxShadow: `0 0 50px ${theme === 'cyber' ? '#ff61d840' : '#00ff9d30'}`
-          }}
-        >
-          <motion.h2 
-            className={`text-6xl font-bold mb-8 ${
-              theme === 'cyber' ? 'text-pink-400' :
-              theme === 'neon' ? 'text-cyan-400' :
-              'text-emerald-400'
-            }`}
-            animate={hovered ? { textShadow: "0 0 20px currentColor" } : {}}
-            transition={{ duration: 1 }}
-          >
-            {title}
-          </motion.h2>
-          
-          <motion.p
-            className="text-xl text-gray-300 mb-12 max-w-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            {description}
-          </motion.p>
+// Theme gradients for each section
+const SECTION_STYLES = {
+  "Développement Web": {
+    gradient: "from-[#ff61d8] to-[#7d6fff]",
+    bar: "bg-gradient-to-r from-[#ff61d8] to-[#7d6fff]",
+  },
+  "Intelligence Artificielle": {
+    gradient: "from-[#00f7ff] to-[#00dcf8]",
+    bar: "bg-gradient-to-r from-[#00f7ff] to-[#00dcf8]",
+  },
+  "Systèmes Embarqués": {
+    gradient: "from-[#00ff9d] to-[#00c772]",
+    bar: "bg-gradient-to-r from-[#00ff9d] to-[#00c772]",
+  },
+} as const;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {children}
-          </div>
-        </motion.div>
-      </div>
-    </motion.section>
-  );
-};
+type SectionKey = keyof typeof SECTION_STYLES;
+interface Skill { name: string; level: number }
+interface Section { title: SectionKey; description: string; skills: Skill[] }
 
-const SkillCard = ({ title, description, theme }: { title: string; description: string; theme: string }) => {
-  const [isHovered, setIsHovered] = useState(false);
+const SECTIONS: Section[] = [
+  {
+    title: "Développement Web",
+    description: "Interfaces réactives, SSR & performances optimisées.",
+    skills: [
+      { name: "React / Next.js", level: 95 },
+      { name: "TypeScript", level: 92 },
+      { name: "Node.js", level: 90 },
+      { name: "Tailwind CSS", level: 88 },
+    ],
+  },
+  {
+    title: "Intelligence Artificielle",
+    description: "Modèles ML, Chatbots & pipelines de données.",
+    skills: [
+      { name: "Python / TensorFlow", level: 85 },
+      { name: "NLP / LLM", level: 80 },
+      { name: "Data Science", level: 78 },
+    ],
+  },
+  {
+    title: "Systèmes Embarqués",
+    description: "Firmware temps réel & IoT basse consommation.",
+    skills: [
+      { name: "C++20", level: 82 },
+      { name: "Rust", level: 75 },
+      { name: "Embedded IoT", level: 70 },
+    ],
+  },
+];
 
-  return (
-    <motion.div
-      className="relative p-8 rounded-xl backdrop-blur-lg border bg-black/20 hover:bg-black/40 transition-all"
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      animate={{
-        borderColor: isHovered ? 
-          theme === 'cyber' ? '#ff61d8' : 
-          theme === 'neon' ? '#00f7ff' : '#00ff9d' : 'transparent',
-        y: isHovered ? -10 : 0
-      }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 to-transparent" />
-      
-      <h3 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${
-        theme === 'cyber' ? 'from-pink-400 to-purple-400' :
-        theme === 'neon' ? 'from-cyan-400 to-blue-400' :
-        'from-green-400 to-emerald-400'
-      } bg-clip-text text-transparent`}>
-        {title}
-      </h3>
-      <p className="text-gray-300">{description}</p>
-      
-      <motion.div
-        className="absolute inset-0 rounded-xl border pointer-events-none"
-        animate={{
-          opacity: isHovered ? 1 : 0,
-          borderColor: theme === 'cyber' ? '#ff61d8' : 
-                      theme === 'neon' ? '#00f7ff' : '#00ff9d'
-        }}
-        transition={{ duration: 0.3 }}
-      />
-    </motion.div>
-  );
+// Accordion animation variants
+const variants = {
+  open: { height: "auto", opacity: 1 },
+  collapsed: { height: 0, opacity: 0 },
 };
 
 export default function SkillsPage() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
+
   return (
-    <div className="relative min-h-screen bg-black text-white overflow-hidden">
-      <SkillSection
-        title="Développement Web"
-        description="Création d'applications modernes avec les dernières technologies"
-        particles={{ colors: ['#ff61d8', '#7d6fff'], behavior: 'attract' }}
-        theme="cyber"
-      >
-        <SkillCard
-          title="React/Next.js"
-          description="Applications full-stack performantes"
-          theme="cyber"
-        />
-        <SkillCard
-          title="TypeScript"
-          description="Typage statique avancé"
-          theme="cyber"
-        />
-        <SkillCard
-          title="Node.js"
-          description="Backend haute performance"
-          theme="cyber"
-        />
-      </SkillSection>
-
-      <SkillSection
-        title="Intelligence Artificielle"
-        description="Développement de modèles intelligents et solutions ML"
-        particles={{ colors: ['#00f7ff', '#00ff9d'], behavior: 'repel' }}
-        theme="neon"
-      >
-        <SkillCard
-          title="Python/TensorFlow"
-          description="Deep Learning & Réseaux de neurones"
-          theme="neon"
-        />
-        <SkillCard
-          title="Data Science"
-          description="Analyse de données complexes"
-          theme="neon"
-        />
-        <SkillCard
-          title="NLP"
-          description="Traitement du langage naturel"
-          theme="neon"
-        />
-      </SkillSection>
-
-      <SkillSection
-        title="Systèmes Embarqués"
-        description="Développement bas niveau et solutions matérielles"
-        particles={{ colors: ['#00ff9d', '#0066ff'], behavior: 'flock' }}
-        theme="matrix"
-      >
-        <SkillCard
-          title="C++20/23"
-          description="Optimisation système"
-          theme="matrix"
-        />
-        <SkillCard
-          title="Rust"
-          description="Sécurité mémoire"
-          theme="matrix"
-        />
-        <SkillCard
-          title="IoT"
-          description="Objets connectés"
-          theme="matrix"
-        />
-      </SkillSection>
-    </div>
+    <main className="relative overflow-hidden bg-gradient-to-br from-[#050011] to-[#1a002a] min-h-screen text-white">
+      <ParticleBackground />
+      <div className="relative z-10 max-w-3xl mx-auto p-6 space-y-6">
+        <h1 className="text-4xl font-bold text-center mb-4">Mes Compétences</h1>
+        {SECTIONS.map((sec, idx) => (
+          <div key={sec.title} className="border border-gray-700 rounded-xl overflow-hidden backdrop-blur-sm">
+            <button
+              onClick={() => toggle(idx)}
+              className={`w-full flex justify-between items-center p-4 bg-gray-900 hover:bg-gray-800 transition-shadow
+                ${openIndex===idx?`shadow-lg shadow-[rgba(255,255,255,0.15)]`:''}`}
+            >
+              <motion.span
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className={`text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r ${SECTION_STYLES[sec.title].gradient}`}
+              >
+                {sec.title}
+              </motion.span>
+              <motion.span
+                animate={{ rotate: openIndex===idx?45:0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="text-gray-400 text-2xl"
+              >
+                +
+              </motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {openIndex===idx && (
+                <motion.div
+                  key="content"
+                  initial="collapsed"
+                  animate="open"
+                  exit="collapsed"
+                  variants={variants}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
+                  className="px-6 pb-6 bg-gray-800"
+                >
+                  <p className="text-gray-300 mb-4">{sec.description}</p>
+                  <div className="space-y-4">
+                    {sec.skills.map((sk, i) => (
+                      <div key={sk.name}>
+                        <div className="flex justify-between mb-1">
+                          <span>{sk.name}</span>
+                          <span>{sk.level}%</span>
+                        </div>
+                        <div className="w-full bg-gray-700 h-3 rounded-full overflow-hidden">
+                          <motion.div
+                            className={`${SECTION_STYLES[sec.title].bar} h-3 rounded-full`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${sk.level}%` }}
+                            transition={{ duration: 1, ease: 'easeOut', delay: i*0.1 }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+        <div className="text-center mt-8">
+          <Link href="/" className="text-[#7d6fff] hover:underline">
+            ← Retour à l'accueil
+          </Link>
+        </div>
+      </div>
+    </main>
   );
 }
