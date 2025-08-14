@@ -1,267 +1,360 @@
 "use client";
 
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { motion, useInView, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FiGithub, FiLinkedin, FiMail, FiArrowUpRight } from "react-icons/fi";
 
+/********************
+ * Background Particles (optimisé)
+ ********************/
 interface Particle {
   x: number;
   y: number;
-  radius: number;
-  color: string;
-  velocityX: number;
-  velocityY: number;
-  alpha: number;
+  vx: number;
+  vy: number;
+  r: number;
+  a: number; // alpha
+  c: string; // color
 }
 
 function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [initialized, setInitialized] = useState(false);
-  const mousePos = useRef({ x: 0, y: 0 });
+  const [ready, setReady] = useState(false);
+  const prefersReduced = useReducedMotion();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    const colors = [
-      "rgba(255,110,199,0.8)",
-      "rgba(157,78,221,0.8)",
-      "rgba(90,24,154,0.8)",
-      "rgba(60,9,108,0.8)",
-    ];
+    let raf = 0;
     let particles: Particle[] = [];
-    let animationFrameId: number;
+    let width = 0,
+      height = 0,
+      dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mousePos.current = { x: e.clientX, y: e.clientY };
-    };
+    const COLORS = [
+      "rgba(255,110,199,0.9)", // pink
+      "rgba(157,78,221,0.85)", // purple
+      "rgba(90,24,154,0.85)", // deep purple
+      "rgba(60,9,108,0.85)", // indigo
+    ];
 
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     const init = () => {
       particles = [];
-      const density = window.innerWidth < 768 ? 0.0002 : 0.0003;
-      const numberOfParticles = Math.floor(
-        window.innerWidth * window.innerHeight * density
-      );
+      // Densité contrôlée + bornes pour éviter O(N^2) trop lourd
+      const area = width * height;
+      const baseDensity = width < 768 ? 0.00012 : 0.00018; // légèrement moins dense que l'original pour la perf
+      const count = Math.max(60, Math.min(220, Math.floor(area * baseDensity)));
 
-      for (let i = 0; i < numberOfParticles; i++) {
+      for (let i = 0; i < count; i++) {
+        const speed = (Math.random() * 0.4 + 0.1) * (width < 768 ? 0.8 : 1);
         particles.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          radius: Math.random() * 4 + 1,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          velocityX: (Math.random() - 0.5) * 0.1,
-          velocityY: (Math.random() - 0.5) * 0.1,
-          alpha: Math.random() * 0.5 + 0.5,
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * speed,
+          vy: (Math.random() - 0.5) * speed,
+          r: Math.random() * 3 + 0.8,
+          a: Math.random() * 0.4 + 0.4,
+          c: COLORS[(Math.random() * COLORS.length) | 0],
         });
       }
     };
 
-    const drawParticles = () => {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Effet de répulsion simple autour de la souris
+    const mouse = { x: -9999, y: -9999 };
+    const handleMove = (e: MouseEvent) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    const handleLeave = () => {
+      mouse.x = -9999;
+      mouse.y = -9999;
+    };
 
-      particles.forEach((p) => {
-        const dx = p.x - mousePos.current.x;
-        const dy = p.y - mousePos.current.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const force = -1000 / distance;
+    // Petite ligne entre particules proches
+    const LINK_DIST = Math.min(140, Math.max(80, Math.floor(Math.min(width, height) * 0.18)));
 
-        if (distance < 150) {
-          p.x += force * (dx / distance);
-          p.y += force * (dy / distance);
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = "lighter"; // jolis blends
+
+      // Update + points
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        // Répulsion
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 120) {
+          const force = (120 - dist) / 120;
+          p.vx += (dx / (dist || 1)) * force * 0.12;
+          p.vy += (dy / (dist || 1)) * force * 0.12;
         }
 
-        p.x += p.velocityX;
-        p.y += p.velocityY;
-
-        if (p.x < 0 || p.x > canvas.width) p.velocityX *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.velocityY *= -1;
+        p.x += p.vx;
+        p.y += p.vy;
+        // rebond simple
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.c;
+        ctx.globalAlpha = p.a;
         ctx.fill();
-      });
+      }
+
+      // Lignes (échantillonnage léger pour perf)
+      ctx.globalAlpha = 0.25;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        // On ne regarde que quelques voisins suivants pour éviter O(N^2) complet
+        for (let j = i + 1; j < Math.min(particles.length, i + 18); j++) {
+          const q = particles[j];
+          const dx = p.x - q.x;
+          const dy = p.y - q.y;
+          const d = dx * dx + dy * dy;
+          if (d < LINK_DIST * LINK_DIST) {
+            const alpha = 1 - Math.sqrt(d) / LINK_DIST;
+            ctx.strokeStyle = "rgba(200,160,255," + (alpha * 0.6).toFixed(3) + ")";
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.globalAlpha = 1;
     };
 
-    const animate = () => {
-      drawParticles();
-      animationFrameId = requestAnimationFrame(animate);
+    let last = performance.now();
+    const loop = () => {
+      // Pause si onglet caché ou si l'utilisateur préfère limiter l'animation
+      if (!document.hidden && !prefersReduced) {
+        const now = performance.now();
+        const dt = now - last;
+        // On limite le rafraîchissement ~60fps max
+        if (dt >= 14) {
+          last = now;
+          draw();
+        }
+      }
+      raf = requestAnimationFrame(loop);
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("resize", () => {
-      resizeCanvas();
+    const onResize = () => {
+      resize();
       init();
-    });
+    };
 
-    resizeCanvas();
+    resize();
     init();
-    animate();
-    setInitialized(true);
+    setReady(true);
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseleave", handleLeave);
+    window.addEventListener("resize", onResize);
+    raf = requestAnimationFrame(loop);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseleave", handleLeave);
+      window.removeEventListener("resize", onResize);
     };
-  }, []);
+  }, [prefersReduced]);
 
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 w-full h-full pointer-events-none z-0 transition-opacity duration-1000 ${
-        initialized ? "opacity-100" : "opacity-0"
+      aria-hidden
+      className={`fixed inset-0 w-full h-full pointer-events-none z-0 transition-opacity duration-700 ${
+        ready ? "opacity-100" : "opacity-0"
       }`}
     />
   );
 }
 
+/********************
+ * Composants UI simples
+ ********************/
+function PrimaryButton({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="group relative inline-flex items-center gap-2 rounded-full px-8 py-4 font-semibold text-white bg-gradient-to-r from-pink-600 to-purple-600 shadow-[0_8px_30px_rgb(136,58,234,0.35)] hover:shadow-[0_12px_42px_rgba(136,58,234,0.55)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
+    >
+      {children}
+      <FiArrowUpRight className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+      <span className="absolute inset-0 rounded-full bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    </a>
+  );
+}
+
 export default function Home() {
-  // On va appliquer un effet de scale juste sur l'image
+  // Scale doux sur la photo au scroll
   const { scrollYProgress } = useScroll();
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.2]);
+  const prefersReduced = useReducedMotion();
+  const scale = useTransform(scrollYProgress, [0, 1], prefersReduced ? [1, 1] : [1, 1.18]);
 
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const isInView = useInView(ref, { once: true, margin: "-120px" });
+
+  // Parallaxe très légère sur l'aura derrière la photo
+  const auraY = useTransform(scrollYProgress, [0, 1], [0, 40]);
+
+  // Variants d'entrée doux
+  const fadeUp = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: 24 },
+      show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+    }),
+    []
+  );
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden font-sans">
-      {/* Background fixe */}
+      {/* Dégradé de fond (identité conservée) */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-[#0f0720] to-[#1a0933]" />
       <ParticleBackground />
 
       <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* On ne centre pas de façon forcée toute la grille */}
         <div className="min-h-screen flex items-center">
-          <div className="grid lg:grid-cols-2 gap-16 items-center py-24">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center py-20 lg:py-24">
+            {/* Colonne texte */}
             <motion.div
               ref={ref}
               initial="hidden"
-              animate={isInView ? "visible" : "hidden"}
-              variants={{
-                hidden: { opacity: 0 },
-                visible: { opacity: 1, transition: { duration: 1 } },
-              }}
+              animate={isInView ? "show" : "hidden"}
+              variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } }}
             >
-              <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
+              <motion.h1
+                variants={fadeUp}
+                className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent tracking-tight"
               >
-                <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                  Pablo, développeur full-stack
-                </h1>
-              </motion.div>
+                Pablo, développeur full‑stack
+              </motion.h1>
 
               <motion.p
-                className="text-xl md:text-2xl text-gray-300 mt-8 mb-12 max-w-2xl leading-relaxed"
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
+                variants={fadeUp}
+                className="text-lg md:text-xl text-gray-300 mt-6 md:mt-8 mb-8 md:mb-10 max-w-2xl leading-relaxed"
               >
-                Je m&apos;appelle Pablo, développeur full-stack spécialisé dans
-                la création d&apos;applications web immersives et performantes.
-                Chaque ligne compte.
+                Je conçois des expériences web immersives et performantes, avec une obsession du détail et de la fluidité. Chaque ligne compte.
               </motion.p>
 
-              <motion.div
-                className="flex flex-wrap gap-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-              >
-                <a
-                  href="/projects"
-                  className="group relative flex items-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-4 rounded-full font-semibold text-white hover:shadow-xl hover:shadow-pink-500/20 transition-all duration-300"
-                >
-                  Explorer mes réalisations
-                  <FiArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
+              {/* CTA + Socials */}
+              <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4 md:gap-5">
+                <PrimaryButton href="/projects">Explorer mes réalisations</PrimaryButton>
 
-                <div className="flex gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
                   <a
+                    aria-label="GitHub"
                     href="https://github.com/PabloDev-bit"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
                   >
-                    <FiGithub size={24} />
+                    <FiGithub size={22} />
                   </a>
                   <a
+                    aria-label="LinkedIn"
                     href="https://linkedin.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
                   >
-                    <FiLinkedin size={24} />
+                    <FiLinkedin size={22} />
                   </a>
                   <a
-                    href="pablopro.dev@gmail.com"
-                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                    aria-label="Email"
+                    href="mailto:pablopro.dev@gmail.com"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
                   >
-                    <FiMail size={24} />
+                    <FiMail size={22} />
                   </a>
                 </div>
               </motion.div>
+
+              {/* Petit badge "Disponible" */}
+              <motion.div
+                variants={fadeUp}
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-200 backdrop-blur-md"
+              >
+                <span className="relative inline-flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping bg-pink-500" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-pink-400" />
+                </span>
+                Disponible pour missions & stages — Sherbrooke / Remote
+              </motion.div>
             </motion.div>
 
-            {/* On applique le scale seulement autour de l'image */}
+            {/* Colonne image */}
             <div className="relative flex justify-center">
               <motion.div
                 style={{ scale, transformOrigin: "center center" }}
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative"
               >
-                <div className="relative">
-                  <img
-                    src="/images/photoProfil.jpg"
-                    alt="Pablo Développeur"
-                    className="w-80 h-80 rounded-2xl object-cover relative z-10 border-4 border-white/10 shadow-2xl"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/30 to-purple-500/30 blur-3xl rounded-2xl animate-pulse" />
-                  <motion.div
-                    className="absolute -bottom-8 -right-8 bg-gradient-to-r from-pink-600 to-purple-600 p-4 rounded-2xl shadow-xl"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{
-                      repeat: Infinity,
-                      repeatType: "mirror",
-                      duration: 2,
-                    }}
-                  />
+                {/* Aura animée derrière la photo */}
+                <motion.div
+                  style={{ y: auraY }}
+                  aria-hidden
+                  className="absolute -inset-8 rounded-[2rem] bg-gradient-to-r from-pink-500/25 to-purple-500/25 blur-2xl"
+                />
+
+                {/* Cadre verre + photo */}
+                <div className="relative rounded-[1.5rem] p-[1px] bg-gradient-to-br from-white/20 via-white/5 to-transparent">
+                  <div className="rounded-[1.45rem] bg-white/5 backdrop-blur-xl">
+                    <img
+                      src="/images/photoProfil.jpg"
+                      alt="Portrait de Pablo, développeur full‑stack"
+                      className="relative z-10 w-80 h-80 md:w-96 md:h-96 rounded-[1.4rem] object-cover border border-white/10 shadow-2xl"
+                      loading="eager"
+                    />
+                  </div>
                 </div>
+
+                {/* Accent animé discret */}
+                <motion.div
+                  aria-hidden
+                  className="absolute -bottom-8 -right-8 bg-gradient-to-r from-pink-600 to-purple-600 p-4 rounded-2xl shadow-xl"
+                  initial={{ y: 12, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ repeat: prefersReduced ? 0 : Infinity, repeatType: "mirror", duration: 2 }}
+                />
               </motion.div>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="relative z-10 border-t border-white/10 bg-gradient-to-b from-black/50 to-transparent">
+      <footer className="relative z-10 border-t border-white/10 bg-gradient-to-b from-black/40 to-transparent">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-gray-400 text-sm mb-4 md:mb-0">
             © {new Date().getFullYear()} Pablo. Tous droits réservés.
           </div>
-          <div className="flex space-x-6">
-            <a
-              href="/mentions-legales"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
+          <div className="flex space-x-6 text-sm">
+            <a href="/mentions-legales" className="text-gray-400 hover:text-white transition-colors">
               Mentions légales
             </a>
-            <a
-              href="/politique-confidentialite"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
+            <a href="/politique-confidentialite" className="text-gray-400 hover:text-white transition-colors">
               Confidentialité
             </a>
           </div>
