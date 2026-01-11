@@ -188,7 +188,7 @@ export default function SkillsPage() {
         ))}
         <div className="text-center mt-8">
           <Link href="/" className="text-[#7d6fff] hover:underline">
-            ← Retour à l'accueil
+            ← Retour à l&apos;accueil
           </Link>
         </div>
       </div>
