@@ -42,8 +42,8 @@ function ParticleBackground() {
     let raf = 0;
     let particles: Particle[] = [];
     let width = 0,
-      height = 0,
-      dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      height = 0;
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
     const COLORS = [
       "rgba(255,110,199,0.9)", // pink
