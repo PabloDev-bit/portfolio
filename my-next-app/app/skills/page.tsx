@@ -15,8 +15,10 @@ function ParticleBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let animId: number;
+    // Correction préventive : const dpr pour éviter l'erreur de linting
     const dpr = window.devicePixelRatio || 1;
     const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
+    
     const init = () => {
       canvas.width = canvas.offsetWidth * dpr;
       canvas.height = canvas.offsetHeight * dpr;
@@ -188,7 +190,8 @@ export default function SkillsPage() {
         ))}
         <div className="text-center mt-8">
           <Link href="/" className="text-[#7d6fff] hover:underline">
-            ← Retour à l'accueil
+            {/* CORRECTION ICI : l'accueil -> l&apos;accueil */}
+            ← Retour à l&apos;accueil
           </Link>
         </div>
       </div>
