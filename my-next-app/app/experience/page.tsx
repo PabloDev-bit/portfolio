@@ -1,341 +1,266 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link'; // Import du composant Link
+import React, { useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import Link from 'next/link';
 
-interface Particle {
-  x: number;
-  y: number;
-  radius: number;
-  color: string;
-  velocityX: number;
-  velocityY: number;
-}
-
+// =============================================================
+// COMPOSANT DE FOND (CORRIGÉ)
+// =============================================================
 function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [initialized, setInitialized] = useState(false);
-
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    
+    let animId: number;
+    // Utilisation de window.innerWidth/Height pour le mode 'fixed'
+    const dpr = window.devicePixelRatio || 1;
+    const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
+    
+    const init = () => {
+      // On utilise innerWidth/Height car le canvas est 'fixed'
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+      stars.length = 0;
+      
+      const numStars = Math.floor((window.innerWidth * window.innerHeight) / 15000); // Densité adaptative
 
-    const colors = ['#ff6ec7', '#9d4edd', '#5a189a', '#240046', '#3c096c', '#b5179e'];
-    let particles: Particle[] = [];
-    let animationFrameId: number;
-
-    function resizeCanvas() {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-
-    function init() {
-      particles = [];
-      const numberOfParticles = window.innerWidth < 768 ? 30 : 60;
-      for (let i = 0; i < numberOfParticles; i++) {
-        particles.push({
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
           x: Math.random() * window.innerWidth,
           y: Math.random() * window.innerHeight,
-          radius: Math.random() * 3 + 1,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          velocityX: (Math.random() - 0.5) * 0.3,
-          velocityY: (Math.random() - 0.5) * 0.3
+          r: Math.random() * 1.5 + 0.3,
+          opacity: Math.random() * 0.5 + 0.3,
+          vx: (Math.random() - 0.5) * 0.05,
+          vy: (Math.random() - 0.5) * 0.05,
         });
       }
-    }
-
-    function drawParticles() {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return; 
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2, false);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-      }
-    }
-
-    function animate() {
-      for (const p of particles) {
-        p.x += p.velocityX;
-        p.y += p.velocityY;
-        if (p.x < 0 || p.x > window.innerWidth) p.velocityX *= -1;
-        if (p.y < 0 || p.y > window.innerHeight) p.velocityY *= -1;
-      }
-      drawParticles();
-      animationFrameId = requestAnimationFrame(animate);
-    }
-
-    resizeCanvas();
-    init();
-    drawParticles();
-    setInitialized(true);
-    animationFrameId = requestAnimationFrame(animate);
-
-    function handleResize() {
-      resizeCanvas();
-      init();
-      drawParticles();
-    }
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId);
     };
+
+    const render = () => {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      
+      // Léger voile cosmique (Optionnel, peut être retiré si trop sombre)
+      const gradient = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, window.innerWidth);
+      gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
+      gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)"); // Opacité réduite pour laisser passer le fond
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
+
+      stars.forEach((s) => {
+        s.x += s.vx;
+        s.y += s.vy;
+        
+        // Rebond infini fluide
+        if (s.x < 0) s.x = window.innerWidth;
+        if (s.x > window.innerWidth) s.x = 0;
+        if (s.y < 0) s.y = window.innerHeight;
+        if (s.y > window.innerHeight) s.y = 0;
+        
+        ctx.globalAlpha = s.opacity;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      animId = requestAnimationFrame(render);
+    };
+
+    init();
+    render();
+    window.addEventListener("resize", init);
+    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`fixed top-0 left-0 w-full h-full pointer-events-none z-0 transition-opacity duration-500 ${!initialized ? 'opacity-0' : 'opacity-100'}`}
-    />
-  );
+  // CORRECTION MAJEURE ICI : z-[1] pour passer au-dessus du dégradé de fond
+  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[1]" />;
 }
 
-function LazySection({ children }: { children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = useState(false);
+// =============================================================
+// DONNÉES DE LA TIMELINE
+// =============================================================
+const TIMELINE_DATA = [
+  {
+    year: "2024 - 2026",
+    title: "Formation Académique & Autodidacte",
+    subtitle: "Cégep de Sherbrooke & Udemy",
+    description: "Acquisition des bases solides en informatique (algorithmique, structures de données) complétée par une formation intensive en ligne sur React et l'écosystème JavaScript moderne.",
+    color: "from-pink-500 to-rose-500",
+    icon: "🎓"
+  },
+  {
+    year: "2025",
+    title: "Premiers Projets Full-Stack",
+    subtitle: "ProGym Tracker & Portfolio V1",
+    description: "Développement d'applications concrètes pour résoudre des problèmes réels. Mise en pratique de Next.js, Tailwind CSS et des bases de données SQL via Supabase.",
+    color: "from-purple-500 to-indigo-500",
+    icon: "💻"
+  },
+  {
+    year: "Fin 2025",
+    title: "Exploration IA & 3D Web",
+    subtitle: "Three.js & Intégration LLM",
+    description: "Plongée dans le web immersif avec Three.js et début de l'intégration de modèles d'IA (Hugging Face) dans des interfaces web réactives.",
+    color: "from-blue-500 to-cyan-500",
+    icon: "🤖"
+  },
+  {
+    year: "2026",
+    title: "Futur : Mastère & Alternance",
+    subtitle: "IPSSI - Big Data & IA",
+    description: "Préparation à l'entrée en Mastère spécialisé. Objectif : Devenir un expert capable de fusionner développement web performant et intelligence artificielle.",
+    color: "from-emerald-400 to-green-500",
+    icon: "🚀"
+  }
+];
 
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisible(true);
-        observer.disconnect();
-      }
-    });
-    observer.observe(ref.current);
-  }, []);
+// =============================================================
+// PAGE PRINCIPALE
+// =============================================================
+export default function ExperiencePage() {
+  const { scrollYProgress } = useScroll();
+  const scaleLine = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <div ref={ref}>
-      {visible ? children : <div style={{ height: '200px' }} />} 
-    </div>
-  );
-}
-
-export default function Experience() {
-  return (
-    <div className="relative flex flex-col overflow-x-hidden overflow-y-auto font-sans text-white min-h-screen">
-
-      {/* Arrière-plan animé (dégradé + particules) */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-purple-900 to-indigo-900" />
+    <main className="relative min-h-screen w-full overflow-x-hidden font-sans bg-[#02000a] text-white selection:bg-pink-500/30">
+      
+      {/* COUCHE 1 (z-0) : Background Gradient Statique */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
+      
+      {/* COUCHE 2 (z-1) : Particle Canvas (Géré dans le composant) */}
       <ParticleBackground />
 
-      {/* Contenu principal */}
-      <main className="relative z-10 flex flex-col space-y-32 px-4 md:px-6 pt-20 pb-20">
-
-        {/* SECTION HERO EXPERIENCE */}
-        <section className="relative flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6">
-          <motion.h1
-            className="relative z-10 text-5xl sm:text-6xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-lg"
-            initial={{ opacity: 0, y: -60 }}
+      {/* COUCHE 3 (z-10) : Contenu */}
+      <div className="relative z-10 container mx-auto px-4 md:px-8 py-24 md:py-32">
+        
+        {/* HEADER */}
+        <div className="text-center max-w-4xl mx-auto mb-24 space-y-6">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.8 }}
+            className="text-5xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)]"
           >
-            Mon Expérience
+            Mon Parcours
           </motion.h1>
-
-          <motion.p
-            className="relative z-10 text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl leading-relaxed mx-auto px-2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.4 }}
-          >
-            Bien que je ne possède pas encore d&apos;expérience professionnelle
-            directe, j&apos;ai construit un solide parcours basé sur l&apos;apprentissage
-            autodidacte, la création de projets personnels, la contribution à des
-            communautés en ligne et l&apos;exploration continue de nouvelles technologies.
-          </motion.p>
-
-          <motion.div
-            className="relative z-10 mt-10 text-white opacity-80 hover:opacity-100 transition cursor-pointer animate-bounce"
+          <motion.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 2, duration: 1 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+            className="text-lg md:text-xl text-gray-300 leading-relaxed"
           >
-            {/* Utilisation de Link au lieu de <a> */}
-            <Link href="#timeline" aria-label="Aller à la section Parcours">
-              ↓ SCROLL
-            </Link>
-          </motion.div>
-        </section>
+            Une évolution constante, guidée par la passion du code, <br className="hidden md:block" />
+            l&apos;autodidaxie et la volonté de repousser les limites du web.
+          </motion.p>
+        </div>
 
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50" />
+        {/* TIMELINE CONTAINER */}
+        <div className="relative max-w-5xl mx-auto">
+          
+          {/* Ligne Centrale (Animée au scroll) */}
+          <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-1 bg-white/10 rounded-full ml-[-2px] md:ml-0">
+            <motion.div 
+              style={{ scaleY: scaleLine, transformOrigin: "top" }}
+              className="w-full h-full bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-500 shadow-[0_0_15px_currentColor]"
+            />
+          </div>
 
-        {/* SECTION TIMELINE */}
-        <section
-          id="timeline"
-          className="relative max-w-5xl mx-auto text-center space-y-16"
+          {/* EVENTS */}
+          <div className="space-y-16 md:space-y-24">
+            {TIMELINE_DATA.map((item, index) => (
+              <TimelineItem key={index} item={item} index={index} />
+            ))}
+          </div>
+        </div>
+
+        {/* FOOTER CTA */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-32 text-center"
         >
-          <motion.h2
-            className="text-3xl sm:text-4xl font-extrabold text-white"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            Mon Parcours d&apos;Apprentissage
-          </motion.h2>
-
-          <motion.div
-            className="relative mx-auto"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            {/* Ligne verticale de la timeline (visible en md+) */}
-            <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 w-1 bg-gradient-to-b from-pink-500 via-purple-500 to-indigo-500 h-full" style={{height: '100%'}} />
-
-            <div className="flex flex-col space-y-10 md:space-y-20 relative z-10">
-
-              {/* Etape 1 */}
-              <motion.div
-                className="relative flex flex-col items-center md:items-start md:flex-row md:even:flex-row-reverse"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
-              >
-                <div className="md:w-1/2 px-4">
-                  <div className="bg-gray-800 bg-opacity-80 p-6 rounded-xl shadow-lg backdrop-blur-md hover:scale-[1.02] transform transition">
-                    <h3 className="text-2xl font-bold text-pink-500 mb-2">Démarrage Autodidacte</h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      J&apos;ai commencé par explorer les bases du développement web à travers des tutoriels, des cours en ligne (Udemy, OpenClassrooms, FreeCodeCamp) et des documentations officielles.
-                    </p>
-                  </div>
-                </div>
-                <div className="hidden md:flex md:w-1/2 md:justify-center md:items-center">
-                  <div className="w-6 h-6 rounded-full bg-pink-500 border-4 border-white shadow"></div>
-                </div>
-              </motion.div>
-
-              {/* Etape 2 */}
-              <motion.div
-                className="relative flex flex-col items-center md:items-end md:flex-row md:justify-end"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                viewport={{ once: true }}
-              >
-                <div className="md:w-1/2 px-4 order-2 md:order-1">
-                  <div className="bg-gray-800 bg-opacity-80 p-6 rounded-xl shadow-lg backdrop-blur-md hover:scale-[1.02] transform transition">
-                    <h3 className="text-2xl font-bold text-purple-500 mb-2">Projets Personnels</h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      J&apos;ai créé de petits projets (sites statiques, petites applications React) pour mettre en pratique mes connaissances et perfectionner ma compréhension des technologies Front-End.
-                    </p>
-                  </div>
-                </div>
-                <div className="hidden md:flex md:w-1/2 md:justify-center md:items-center order-1 md:order-2">
-                  <div className="w-6 h-6 rounded-full bg-purple-500 border-4 border-white shadow"></div>
-                </div>
-              </motion.div>
-
-              {/* Etape 3 */}
-              <motion.div
-                className="relative flex flex-col items-center md:items-start md:flex-row md:even:flex-row-reverse"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                viewport={{ once: true }}
-              >
-                <div className="md:w-1/2 px-4">
-                  <div className="bg-gray-800 bg-opacity-80 p-6 rounded-xl shadow-lg backdrop-blur-md hover:scale-[1.02] transform transition">
-                    <h3 className="text-2xl font-bold text-indigo-500 mb-2">Exploration de Nouvelles Techs</h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      Je me suis familiarisé avec Next.js, TypeScript, Tailwind CSS, et d&apos;autres outils modernes pour créer des interfaces plus complexes, plus rapides et plus fiables.
-                    </p>
-                  </div>
-                </div>
-                <div className="hidden md:flex md:w-1/2 md:justify-center md:items-center">
-                  <div className="w-6 h-6 rounded-full bg-indigo-500 border-4 border-white shadow"></div>
-                </div>
-              </motion.div>
-
-              {/* Etape 4 */}
-              <motion.div
-                className="relative flex flex-col items-center md:items-end md:flex-row md:justify-end"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                viewport={{ once: true }}
-              >
-                <div className="md:w-1/2 px-4">
-                  <div className="bg-gray-800 bg-opacity-80 p-6 rounded-xl shadow-lg backdrop-blur-md hover:scale-[1.02] transform transition">
-                    <h3 className="text-2xl font-bold text-pink-400 mb-2">Contributions & Communauté</h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      J&apos;ai commencé à partager mes connaissances, aider d&apos;autres développeurs sur les forums, et contribué à quelques projets open-source pour m&apos;intégrer dans la communauté tech.
-                    </p>
-                  </div>
-                </div>
-                <div className="hidden md:flex md:w-1/2 md:justify-center md:items-center">
-                  <div className="w-6 h-6 rounded-full bg-pink-400 border-4 border-white shadow"></div>
-                </div>
-              </motion.div>
-
-            </div>
-          </motion.div>
-        </section>
-
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-50"></div>
-
-        {/* SECTION CONCLUSION */}
-        <LazySection>
-          <section className="max-w-3xl mx-auto text-center space-y-8">
-            <motion.h2
-              className="text-3xl sm:text-4xl font-extrabold text-white"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
+          <h3 className="text-2xl font-bold text-white mb-8">Prêt à écrire la suite ensemble ?</h3>
+          <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
+            <Link 
+              href="/projects"
+              className="px-8 py-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/50 hover:shadow-[0_0_30px_rgba(236,72,153,0.3)] transition-all duration-300 backdrop-blur-md font-semibold text-lg group"
             >
-              Un Chemin en Évolution Constante
-            </motion.h2>
-            <motion.p
-              className="text-gray-300 leading-relaxed px-2"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
+              Voir mes Projets <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+            </Link>
+            <Link 
+              href="/"
+              className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
             >
-              Mon expérience, bien que non-professionnelle, m&apos;a offert l&apos;opportunité de développer une compréhension profonde
-              du web et de l&apos;écosystème JavaScript. Avec chaque projet réalisé, chaque nouvelle technologie
-              apprise, je me rapproche d&apos;une expertise solide. Mon ambition est claire : continuer à apprendre,
-              grandir et, un jour, mettre ces compétences au service d&apos;une entreprise.
-            </motion.p>
-            <motion.div
-              className="mt-6"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <Link
-                href="/#projects"
-                className="inline-block bg-pink-600 px-8 py-4 rounded-full shadow-md font-semibold text-white transform hover:scale-105 transition-transform hover:shadow-pink-500/50"
-                aria-label="Découvrez mes projets"
-              >
-                Découvrez mes Projets
-              </Link>
-            </motion.div>
-          </section>
-        </LazySection>
-      </main>
+              ← Retour à l&apos;accueil
+            </Link>
+          </div>
+        </motion.div>
 
-      <footer className="text-center text-gray-400 text-sm py-6 border-t border-gray-700 z-10">
-        © {new Date().getFullYear()} Pablo - Tous droits réservés.
-      </footer>
-    </div>
+      </div>
+    </main>
+  );
+}
+
+// =============================================================
+// COMPOSANT ITEM INDIVIDUEL (Pour alléger le code principal)
+// =============================================================
+function TimelineItem({ item, index }: { item: any, index: number }) {
+  const isEven = index % 2 === 0;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.6, delay: index * 0.1 }}
+      className={`relative flex flex-col md:flex-row items-start md:items-center ${isEven ? 'md:flex-row-reverse' : ''}`}
+    >
+      
+      {/* 1. Date (Mobile: hidden, Desktop: visible side) */}
+      <div className={`hidden md:block w-1/2 px-12 text-${isEven ? 'left' : 'right'}`}>
+        <span className={`text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${item.color} opacity-80`}>
+          {item.year}
+        </span>
+      </div>
+
+      {/* 2. Central Node (The glowing orb) */}
+      <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-[#0a001f] border-2 border-white/20 z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+        <span className="text-xl">{item.icon}</span>
+        {/* Ring animation */}
+        <div className={`absolute inset-0 rounded-full animate-ping opacity-20 bg-gradient-to-r ${item.color}`} />
+      </div>
+
+      {/* 3. Card Content */}
+      <div className="w-full md:w-1/2 pl-16 md:pl-0 md:px-12">
+        <div className="group relative p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1">
+          
+          {/* Mobile Year Display */}
+          <span className={`md:hidden inline-block text-sm font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r ${item.color}`}>
+            {item.year}
+          </span>
+
+          <h3 className="text-xl md:text-2xl font-bold text-white mb-1 group-hover:text-pink-200 transition-colors">
+            {item.title}
+          </h3>
+          <p className="text-sm text-gray-400 font-medium mb-4 uppercase tracking-wider">
+            {item.subtitle}
+          </p>
+          <p className="text-gray-300 leading-relaxed text-sm md:text-base">
+            {item.description}
+          </p>
+
+          {/* Glow effect on hover */}
+          <div className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-500 -z-10`} />
+        </div>
+      </div>
+
+    </motion.div>
   );
 }
