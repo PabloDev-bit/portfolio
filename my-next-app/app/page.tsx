@@ -303,7 +303,7 @@ export default function Home() {
                   <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping bg-pink-500" />
                   <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-pink-400" />
                 </span>
-                Disponible pour missions & stages — Sherbrooke / Remote
+                Disponible pour missions & stages — Bordeaux 
               </motion.div>
             </motion.div>
 
