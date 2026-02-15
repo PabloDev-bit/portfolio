@@ -30,9 +30,10 @@ function ParticleBackground() {
 
     let raf = 0;
     let particles: Particle[] = [];
-    let width = 0,
-      height = 0,
-      dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    let width = 0;
+    let height = 0;
+    // CORRECTION ICI : 'const' au lieu de 'let' pour éviter l'erreur de build
+    const dpr = typeof window !== 'undefined' ? Math.max(1, Math.min(2, window.devicePixelRatio || 1)) : 1;
 
     const COLORS = [
       "rgba(255,110,199,0.9)", // pink
@@ -55,7 +56,7 @@ function ParticleBackground() {
       particles = [];
       // Densité contrôlée + bornes pour éviter O(N^2) trop lourd
       const area = width * height;
-      const baseDensity = width < 768 ? 0.00012 : 0.00018; // légèrement moins dense que l'original pour la perf
+      const baseDensity = width < 768 ? 0.00012 : 0.00018; 
       const count = Math.max(60, Math.min(220, Math.floor(area * baseDensity)));
 
       for (let i = 0; i < count; i++) {
@@ -144,11 +145,9 @@ function ParticleBackground() {
 
     let last = performance.now();
     const loop = () => {
-      // Pause si onglet caché ou si l'utilisateur préfère limiter l'animation
       if (!document.hidden && !prefersReduced) {
         const now = performance.now();
         const dt = now - last;
-        // On limite le rafraîchissement ~60fps max
         if (dt >= 14) {
           last = now;
           draw();
@@ -207,7 +206,6 @@ function PrimaryButton({ href, children }: { href: string; children: React.React
 }
 
 export default function Home() {
-  // Scale doux sur la photo au scroll
   const { scrollYProgress } = useScroll();
   const prefersReduced = useReducedMotion();
   const scale = useTransform(scrollYProgress, [0, 1], prefersReduced ? [1, 1] : [1, 1.18]);
@@ -215,10 +213,8 @@ export default function Home() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-120px" });
 
-  // Parallaxe très légère sur l'aura derrière la photo
   const auraY = useTransform(scrollYProgress, [0, 1], [0, 40]);
 
-  // Variants d'entrée doux
   const fadeUp = useMemo(
     () => ({
       hidden: { opacity: 0, y: 24 },
@@ -229,13 +225,13 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden font-sans">
-      {/* Dégradé de fond (identité conservée) */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-[#0f0720] to-[#1a0933]" />
       <ParticleBackground />
 
       <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="min-h-screen flex items-center">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center py-20 lg:py-24">
+            
             {/* Colonne texte */}
             <motion.div
               ref={ref}
@@ -262,6 +258,8 @@ export default function Home() {
                 <PrimaryButton href="/projects">Explorer mes réalisations</PrimaryButton>
 
                 <div className="flex items-center gap-3 md:gap-4">
+                  
+                  {/* GITHUB */}
                   <a
                     aria-label="GitHub"
                     href="https://github.com/PabloDev-bit"
@@ -271,8 +269,11 @@ export default function Home() {
                   >
                     <FiGithub size={22} />
                   </a>
+                  
+                  {/* LINKEDIN */}
                   <a
                     aria-label="LinkedIn"
+                    // 👇 AJOUTE TON LIEN LINKEDIN ICI (ex: https://www.linkedin.com/in/ton-profil/)
                     href="https://www.linkedin.com/in/pablo-hernandez-19269531a/"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -280,6 +281,8 @@ export default function Home() {
                   >
                     <FiLinkedin size={22} />
                   </a>
+                  
+                  {/* MAIL */}
                   <a
                     aria-label="Email"
                     href="mailto:pablopro.dev@gmail.com"
@@ -287,6 +290,7 @@ export default function Home() {
                   >
                     <FiMail size={22} />
                   </a>
+
                 </div>
               </motion.div>
 
