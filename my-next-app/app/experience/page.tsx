@@ -5,7 +5,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
 
 // =============================================================
-// COMPOSANT DE FOND (CORRIGÉ)
+// COMPOSANT DE FOND
 // =============================================================
 function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,18 +17,16 @@ function ParticleBackground() {
     if (!ctx) return;
     
     let animId: number;
-    // Utilisation de window.innerWidth/Height pour le mode 'fixed'
     const dpr = window.devicePixelRatio || 1;
     const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
     
     const init = () => {
-      // On utilise innerWidth/Height car le canvas est 'fixed'
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       ctx.scale(dpr, dpr);
       stars.length = 0;
       
-      const numStars = Math.floor((window.innerWidth * window.innerHeight) / 15000); // Densité adaptative
+      const numStars = Math.floor((window.innerWidth * window.innerHeight) / 15000); 
 
       for (let i = 0; i < numStars; i++) {
         stars.push({
@@ -46,10 +44,9 @@ function ParticleBackground() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       
-      // Léger voile cosmique (Optionnel, peut être retiré si trop sombre)
       const gradient = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, window.innerWidth);
       gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
-      gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)"); // Opacité réduite pour laisser passer le fond
+      gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)");
       ctx.fillStyle = gradient;
       ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
 
@@ -57,7 +54,6 @@ function ParticleBackground() {
         s.x += s.vx;
         s.y += s.vy;
         
-        // Rebond infini fluide
         if (s.x < 0) s.x = window.innerWidth;
         if (s.x > window.innerWidth) s.x = 0;
         if (s.y < 0) s.y = window.innerHeight;
@@ -78,14 +74,22 @@ function ParticleBackground() {
     return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
   }, []);
 
-  // CORRECTION MAJEURE ICI : z-[1] pour passer au-dessus du dégradé de fond
   return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[1]" />;
 }
 
 // =============================================================
-// DONNÉES DE LA TIMELINE
+// DÉFINITION DES TYPES (Pour corriger l'erreur 'any')
 // =============================================================
-const TIMELINE_DATA = [
+interface TimelineData {
+  year: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+const TIMELINE_DATA: TimelineData[] = [
   {
     year: "2024 - 2026",
     title: "Formation Académique & Autodidacte",
@@ -133,7 +137,7 @@ export default function ExperiencePage() {
       {/* COUCHE 1 (z-0) : Background Gradient Statique */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
       
-      {/* COUCHE 2 (z-1) : Particle Canvas (Géré dans le composant) */}
+      {/* COUCHE 2 (z-1) : Particle Canvas */}
       <ParticleBackground />
 
       {/* COUCHE 3 (z-10) : Contenu */}
@@ -163,7 +167,7 @@ export default function ExperiencePage() {
         {/* TIMELINE CONTAINER */}
         <div className="relative max-w-5xl mx-auto">
           
-          {/* Ligne Centrale (Animée au scroll) */}
+          {/* Ligne Centrale */}
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-1 bg-white/10 rounded-full ml-[-2px] md:ml-0">
             <motion.div 
               style={{ scaleY: scaleLine, transformOrigin: "top" }}
@@ -209,9 +213,9 @@ export default function ExperiencePage() {
 }
 
 // =============================================================
-// COMPOSANT ITEM INDIVIDUEL (Pour alléger le code principal)
+// COMPOSANT ITEM INDIVIDUEL (Avec Type 'TimelineData' pour corriger l'erreur)
 // =============================================================
-function TimelineItem({ item, index }: { item: any, index: number }) {
+function TimelineItem({ item, index }: { item: TimelineData, index: number }) {
   const isEven = index % 2 === 0;
 
   return (
@@ -223,14 +227,14 @@ function TimelineItem({ item, index }: { item: any, index: number }) {
       className={`relative flex flex-col md:flex-row items-start md:items-center ${isEven ? 'md:flex-row-reverse' : ''}`}
     >
       
-      {/* 1. Date (Mobile: hidden, Desktop: visible side) */}
+      {/* 1. Date */}
       <div className={`hidden md:block w-1/2 px-12 text-${isEven ? 'left' : 'right'}`}>
         <span className={`text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${item.color} opacity-80`}>
           {item.year}
         </span>
       </div>
 
-      {/* 2. Central Node (The glowing orb) */}
+      {/* 2. Central Node */}
       <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-[#0a001f] border-2 border-white/20 z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
         <span className="text-xl">{item.icon}</span>
         {/* Ring animation */}
