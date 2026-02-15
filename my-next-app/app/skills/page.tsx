@@ -15,6 +15,7 @@ function ParticleBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let animId: number;
+    
     // Correction préventive : const dpr pour éviter l'erreur de linting
     const dpr = window.devicePixelRatio || 1;
     const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
@@ -64,19 +65,19 @@ function ParticleBackground() {
   );
 }
 
-// Theme gradients for each section
+// Mise à jour des clés pour correspondre aux titres exacts des sections
 const SECTION_STYLES = {
-  "Développement Web": {
-    gradient: "from-[#ff61d8] to-[#7d6fff]",
+  "Développement Frontend & UI": {
+    gradient: "from-[#ff61d8] to-[#7d6fff]", // Pink to Purple
     bar: "bg-gradient-to-r from-[#ff61d8] to-[#7d6fff]",
   },
-  "Intelligence Artificielle": {
-    gradient: "from-[#00f7ff] to-[#00dcf8]",
-    bar: "bg-gradient-to-r from-[#00f7ff] to-[#00dcf8]",
-  },
-  "Systèmes Embarqués": {
-    gradient: "from-[#00ff9d] to-[#00c772]",
+  "Backend & Architecture": {
+    gradient: "from-[#00ff9d] to-[#00c772]", // Green (Tech/Node/Docker)
     bar: "bg-gradient-to-r from-[#00ff9d] to-[#00c772]",
+  },
+  "Intelligence Artificielle": {
+    gradient: "from-[#00f7ff] to-[#00dcf8]", // Cyan (Futuristic)
+    bar: "bg-gradient-to-r from-[#00f7ff] to-[#00dcf8]",
   },
 } as const;
 
@@ -84,33 +85,36 @@ type SectionKey = keyof typeof SECTION_STYLES;
 interface Skill { name: string; level: number }
 interface Section { title: SectionKey; description: string; skills: Skill[] }
 
+// Adaptation des données selon ton CV
 const SECTIONS: Section[] = [
   {
-    title: "Développement Web",
-    description: "Interfaces réactives, SSR & performances optimisées.",
+    title: "Développement Frontend & UI",
+    description: "Création d'interfaces immersives avec Next.js et Three.js.",
     skills: [
-      { name: "React / Next.js", level: 95 },
-      { name: "TypeScript", level: 92 },
-      { name: "Node.js", level: 90 },
-      { name: "Tailwind CSS", level: 88 },
+      { name: "React / Next.js", level: 95 }, 
+      { name: "TypeScript / JS (ES6+)", level: 90 },
+      { name: "Tailwind CSS", level: 92 },
+      { name: "Three.js (3D Web)", level: 75 },
+    ],
+  },
+  {
+    title: "Backend & Architecture",
+    description: "Solutions robustes, bases de données et déploiement.",
+    skills: [
+      { name: "Node.js / Python (FastAPI)", level: 85 },
+      { name: "SQL / PostgreSQL (Supabase)", level: 82 },
+      { name: "Docker / Linux", level: 70 },
+      { name: "Git / GitHub / Vercel", level: 88 },
     ],
   },
   {
     title: "Intelligence Artificielle",
-    description: "Modèles ML, Chatbots & pipelines de données.",
+    description: "Intégration de LLM et pipelines de données.",
     skills: [
-      { name: "Python / TensorFlow", level: 85 },
-      { name: "NLP / LLM", level: 80 },
-      { name: "Data Science", level: 78 },
-    ],
-  },
-  {
-    title: "Systèmes Embarqués",
-    description: "Firmware temps réel & IoT basse consommation.",
-    skills: [
-      { name: "C++20", level: 82 },
-      { name: "Rust", level: 75 },
-      { name: "Embedded IoT", level: 70 },
+      { name: "Python & NLP", level: 85 },
+      { name: "Hugging Face / LLM", level: 80 }, 
+      { name: "TensorFlow (Notions)", level: 60 }, 
+      { name: "Agents IA & Chatbots", level: 78 }, 
     ],
   },
 ];
@@ -190,7 +194,7 @@ export default function SkillsPage() {
         ))}
         <div className="text-center mt-8">
           <Link href="/" className="text-[#7d6fff] hover:underline">
-            {/* CORRECTION ICI : l'accueil -> l&apos;accueil */}
+            {/* CORRECTION : l'accueil -> l&apos;accueil */}
             ← Retour à l&apos;accueil
           </Link>
         </div>
