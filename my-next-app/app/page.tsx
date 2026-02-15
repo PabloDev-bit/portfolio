@@ -273,7 +273,7 @@ export default function Home() {
                   </a>
                   <a
                     aria-label="LinkedIn"
-                    href="https://linkedin.com"
+                    href="https://www.linkedin.com/in/pablo-hernandez-19269531a/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
