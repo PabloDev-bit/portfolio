@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import Image from 'next/image';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -10,7 +9,7 @@ import { FaGraduationCap, FaLaptopCode, FaPlaneDeparture, FaDumbbell, FaRobot, F
 import { TypeAnimation } from 'react-type-animation';
 
 // =============================================================
-// COMPOSANT DE FOND (Particules - Identique à ExperiencePage)
+// COMPOSANT DE FOND (Particules)
 // =============================================================
 function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -49,7 +48,6 @@ function ParticleBackground() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       
-      // Gradient léger pour la profondeur
       const gradient = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, window.innerWidth);
       gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
       gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)");
@@ -88,7 +86,7 @@ const Map = dynamic(() => import('react-map-gl').then(mod => mod.Map), { ssr: fa
 const Marker = dynamic(() => import('react-map-gl').then(mod => mod.Marker), { ssr: false });
 
 // Token Mapbox
-const MAPBOX_TOKEN = 'pk.eyJ1IjoicGFibGl0bzM1NTQwIiwiYSI6ImNtNGRkcm5pNjBrbTkycG9uaWFybTFhMzMifQ.G92iGrmTul-F96VMmdrQAw';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 // Données réelles des projets
 const realProjects = [
@@ -113,14 +111,11 @@ const realProjects = [
 ];
 
 export default function About() {
-  const { scrollYProgress } = useScroll();
-  // Animation parallax légère pour les éléments
-  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  // Suppression de useScroll et y ici car ils causaient l'erreur "unused var"
 
   return (
     <div className="relative min-h-screen w-full bg-[#02000a] text-white overflow-x-hidden selection:bg-pink-500/30 font-sans">
       
-      {/* COUCHE 1 : Fond Statique + Particules */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
       <ParticleBackground />
 
@@ -174,10 +169,11 @@ export default function About() {
                 Mon Ambition
               </h2>
             </div>
+            {/* CORRECTION DES APOSTROPHES ICI */}
             <p className="text-gray-300 leading-relaxed text-lg">
-              Actuellement étudiant au Cégep de Sherbrooke, je me prépare à rejoindre <span className="text-pink-300 font-semibold">l'IPSSI Bordeaux</span> en Décembre 2026 pour un <span className="text-purple-300 font-semibold">Mastère Big Data & IA</span>. 
+              Actuellement étudiant au Cégep de Sherbrooke, je me prépare à rejoindre <span className="text-pink-300 font-semibold">l&apos;IPSSI Bordeaux</span> en Décembre 2026 pour un <span className="text-purple-300 font-semibold">Mastère Big Data & IA</span>. 
               <br/><br/>
-              Je cherche activement une <span className="text-indigo-300 font-semibold">alternance</span> pour appliquer ma passion du code et de l'intelligence artificielle dans des projets d'envergure.
+              Je cherche activement une <span className="text-indigo-300 font-semibold">alternance</span> pour appliquer ma passion du code et de l&apos;intelligence artificielle dans des projets d&apos;envergure.
             </p>
           </div>
 
@@ -226,7 +222,6 @@ export default function About() {
                 whileHover={{ y: -10 }}
                 className="group relative p-8 rounded-3xl bg-[#0d0d12] border border-white/5 overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:border-white/20"
               >
-                {/* Glow effect */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
 
                 <div className="relative z-10">
@@ -284,7 +279,7 @@ export default function About() {
           <div className="relative h-[500px] w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
             <Map
               initialViewState={{
-                longitude: -35, // Centré sur l'Atlantique pour voir les deux
+                longitude: -35, 
                 latitude: 46,
                 zoom: 2.5
               }}
@@ -293,7 +288,6 @@ export default function About() {
               mapboxAccessToken={MAPBOX_TOKEN}
               attributionControl={false}
             >
-                {/* Marker Sherbrooke */}
                 <Marker longitude={-71.898} latitude={45.404} anchor="bottom">
                     <div className="relative flex flex-col items-center group cursor-pointer">
                         <div className="w-4 h-4 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,1)] animate-pulse" />
@@ -303,7 +297,6 @@ export default function About() {
                     </div>
                 </Marker>
 
-                {/* Marker Bordeaux */}
                 <Marker longitude={-0.579} latitude={44.837} anchor="bottom">
                      <div className="relative flex flex-col items-center group cursor-pointer">
                         <div className="w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_15px_rgba(34,211,238,1)]" />
@@ -314,7 +307,6 @@ export default function About() {
                 </Marker>
             </Map>
             
-            {/* Overlay Gradient pour fondre la carte dans le design */}
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#02000a] via-transparent to-transparent opacity-80" />
           </div>
         </section>
