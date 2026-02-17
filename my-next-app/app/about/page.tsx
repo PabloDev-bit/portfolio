@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { FaGraduationCap, FaLaptopCode, FaPlaneDeparture, FaDumbbell, FaRobot, FaCube } from 'react-icons/fa';
+// Ajout des icônes pour la Finance (ChartLine), le Coût (Coins) et le Premium (Gem)
+import { FaGraduationCap, FaLaptopCode, FaPlaneDeparture, FaChartLine, FaCoins, FaGem } from 'react-icons/fa';
 import { TypeAnimation } from 'react-type-animation';
 
 // =============================================================
@@ -88,31 +89,30 @@ const Marker = dynamic(() => import('react-map-gl').then(mod => mod.Marker), { s
 // Token Mapbox
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
-// Données réelles des projets
+// Données réelles des projets (Basées sur tes vraies réalisations)
 const realProjects = [
   {
-    title: 'ANABOLIC AI',
-    description: 'Agent IA local en Python pour l\'assistance au développement et workflow.',
-    tech: ['Python', 'LLM', 'Local API', 'Vercel'],
-    icon: <FaRobot className="text-3xl text-cyan-400" />
+    title: 'MHNet – Premium Cleaning',
+    description: 'Site vitrine ultra-performant pour une entreprise de nettoyage suisse haut de gamme.',
+    tech: ['Next.js', 'Tailwind', 'Framer Motion'],
+    icon: <FaGem className="text-3xl text-cyan-400" />
   },
   {
-    title: 'AETHERIS Portfolio',
-    description: 'Expérience web immersive 3D avec particules et shader instancing.',
-    tech: ['Next.js 15', 'Three.js', 'R3F', 'WebGL'],
-    icon: <FaCube className="text-3xl text-purple-400" />
+    title: 'CostCrafter',
+    description: 'Comparateur interactif du coût de la vie pour expatriés avec analyse de données.',
+    tech: ['React', 'Firebase', 'Recharts'],
+    icon: <FaCoins className="text-3xl text-purple-400" />
   },
   {
-    title: 'ProGym Tracker',
-    description: 'App Full-Stack de suivi de surcharge progressive pour la musculation.',
-    tech: ['Next.js', 'PostgreSQL', 'Tailwind', 'Auth'],
-    icon: <FaDumbbell className="text-3xl text-pink-400" />
+    title: 'Finance Forecast Hub',
+    description: 'Dashboard financier temps réel connectant l\'API Yahoo Finance pour la visualisation boursière.',
+    tech: ['Next.js', 'API Yahoo', 'Data Viz'],
+    icon: <FaChartLine className="text-3xl text-pink-400" />
   }
 ];
 
 export default function About() {
-  // Suppression de useScroll et y ici car ils causaient l'erreur "unused var"
-
+  
   return (
     <div className="relative min-h-screen w-full bg-[#02000a] text-white overflow-x-hidden selection:bg-pink-500/30 font-sans">
       
@@ -169,7 +169,6 @@ export default function About() {
                 Mon Ambition
               </h2>
             </div>
-            {/* CORRECTION DES APOSTROPHES ICI */}
             <p className="text-gray-300 leading-relaxed text-lg">
               Actuellement étudiant au Cégep de Sherbrooke, je me prépare à rejoindre <span className="text-pink-300 font-semibold">l&apos;IPSSI Bordeaux</span> en Décembre 2026 pour un <span className="text-purple-300 font-semibold">Mastère Big Data & IA</span>. 
               <br/><br/>
