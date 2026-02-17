@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import emailjs from '@emailjs/browser';
-import { FaPaperPlane, FaEnvelope, FaMapMarkerAlt, FaLinkedin, FaGithub, FaCheckCircle } from "react-icons/fa";
+import { FaPaperPlane, FaEnvelope, FaLinkedin, FaGithub, FaCheckCircle } from "react-icons/fa";
 
 // =============================================================
-// 1. COMPOSANT DE FOND (Copie exacte pour cohérence parfaite)
+// 1. COMPOSANT DE FOND (Particules)
 // =============================================================
 function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -81,7 +81,7 @@ export default function ContactPage() {
   const [isSending, setIsSending] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Configuration EmailJS (TES CLÉS SONT ICI)
+  // Configuration EmailJS
   const SERVICE_ID = 'service_n17yb4c';
   const TEMPLATE_ID = 'template_z57vnwo';
   const PUBLIC_KEY = '_BEiR54v6SUVi6O6q';
@@ -95,11 +95,8 @@ export default function ContactPage() {
     setIsSending(true);
     setStatus('idle');
 
-    // Simulation de chargement (pour l'effet UX) + Envoi réel
     try {
-      // Pour tester sans envoyer de vrais mails, commente la ligne emailjs
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, formData, PUBLIC_KEY);
-      
       setStatus('success');
       setFormData({ name: '', email: '', message: '' });
     } catch (error) {
@@ -117,7 +114,7 @@ export default function ContactPage() {
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
       <ParticleBackground />
 
-      {/* Cercles d'ambiance (Glow effect derrière le formulaire) */}
+      {/* Cercles d'ambiance */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -133,8 +130,9 @@ export default function ContactPage() {
           <h1 className="text-5xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)] mb-4">
             Contactez-moi
           </h1>
+          {/* CORRECTION : &apos; pour l'apostrophe */}
           <p className="text-gray-400 text-lg md:text-xl">
-            Un projet en tête ? Une opportunité d'alternance ? <br className="hidden md:block"/>
+            Un projet en tête ? Une opportunité d&apos;alternance ? <br className="hidden md:block"/>
             Lançons la communication.
           </p>
         </motion.div>
@@ -158,7 +156,7 @@ export default function ContactPage() {
               <div className="space-y-4 text-gray-300">
                 <p className="flex items-center gap-3 hover:text-white transition-colors">
                    <span className="w-1.5 h-1.5 rounded-full bg-pink-500"/> 
-                   hernandez.pablo35540@gmail.com
+                   pablo.hernandez@example.com
                 </p>
                 <p className="flex items-center gap-3 hover:text-white transition-colors">
                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500"/> 
@@ -175,7 +173,7 @@ export default function ContactPage() {
                <h3 className="text-2xl font-bold text-white mb-6">Réseaux Sociaux</h3>
                <div className="flex gap-4">
                  <SocialBtn icon={<FaGithub />} label="GitHub" href="https://github.com/PabloDev-bit" color="hover:text-white hover:bg-black" />
-                 <SocialBtn icon={<FaLinkedin />} label="LinkedIn" href="https://www.linkedin.com/in/pablo-hernandez-19269531a/" color="hover:text-white hover:bg-[#0077b5]" />
+                 <SocialBtn icon={<FaLinkedin />} label="LinkedIn" href="#" color="hover:text-white hover:bg-[#0077b5]" />
                </div>
             </div>
           </motion.div>
@@ -279,10 +277,20 @@ export default function ContactPage() {
 }
 
 // =============================================================
-// COMPOSANTS UI REUTILISABLES
+// COMPOSANTS UI REUTILISABLES (TYPES CORRIGÉS)
 // =============================================================
 
-function InputGroup({ label, name, type = "text", value, onChange, placeholder }: any) {
+// Interface explicite pour InputGroup
+interface InputGroupProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  placeholder: string;
+  type?: string;
+}
+
+function InputGroup({ label, name, type = "text", value, onChange, placeholder }: InputGroupProps) {
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-gray-400 ml-1">{label}</label>
@@ -299,7 +307,15 @@ function InputGroup({ label, name, type = "text", value, onChange, placeholder }
   );
 }
 
-function SocialBtn({ icon, label, href, color }: any) {
+// Interface explicite pour SocialBtn
+interface SocialBtnProps {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  color: string;
+}
+
+function SocialBtn({ icon, label, href, color }: SocialBtnProps) {
   return (
     <a 
       href={href} 
