@@ -173,7 +173,7 @@ export default function ContactPage() {
                <h3 className="text-2xl font-bold text-white mb-6">Réseaux Sociaux</h3>
                <div className="flex gap-4">
                  <SocialBtn icon={<FaGithub />} label="GitHub" href="https://github.com/PabloDev-bit" color="hover:text-white hover:bg-black" />
-                 <SocialBtn icon={<FaLinkedin />} label="LinkedIn" href="#" color="hover:text-white hover:bg-[#0077b5]" />
+                 <SocialBtn icon={<FaLinkedin />} label="LinkedIn" href="https://www.linkedin.com/in/pablo-hernandez-19269531a/" color="hover:text-white hover:bg-[#0077b5]" />
                </div>
             </div>
           </motion.div>
