@@ -156,7 +156,7 @@ export default function ContactPage() {
               <div className="space-y-4 text-gray-300">
                 <p className="flex items-center gap-3 hover:text-white transition-colors">
                    <span className="w-1.5 h-1.5 rounded-full bg-pink-500"/> 
-                   pablo.hernandez@example.com
+                   hernandez.pablo35540@gmail.com
                 </p>
                 <p className="flex items-center gap-3 hover:text-white transition-colors">
                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500"/> 
