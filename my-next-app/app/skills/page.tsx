@@ -1,245 +1,231 @@
 "use client";
-// =============================================================
-// Skills Page – Cosmic Accordion Theme (Enhanced UI)
-// =============================================================
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import Backdrop from "../(components)/Backdrop";
 
-// INLINE ParticleBackground (Inchangé)
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    let animId: number;
-    
-    const dpr = window.devicePixelRatio || 1;
-    const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
-    
-    const init = () => {
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
-      ctx.scale(dpr, dpr);
-      stars.length = 0;
-      // Un peu plus d'étoiles pour la profondeur
-      for (let i = 0; i < 150; i++) {
-        stars.push({
-          x: Math.random() * canvas.offsetWidth,
-          y: Math.random() * canvas.offsetHeight,
-          r: Math.random() * 1.5 + 0.5, // Étoiles légèrement plus variées
-          opacity: Math.random() * 0.5 + 0.3,
-          vx: (Math.random() - 0.5) * 0.08,
-          vy: (Math.random() - 0.5) * 0.08,
-        });
-      }
-    };
-    const render = () => {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-      // Ajout d'un léger "voile" cosmique
-      const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
-      gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
-      gradient.addColorStop(1, "rgba(5, 0, 20, 0.6)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0,0, canvas.width, canvas.height);
+/* ------------------------------------------------------------------ */
+/* Données                                                             */
+/* ------------------------------------------------------------------ */
 
-      stars.forEach((s) => {
-        s.x += s.vx;
-        s.y += s.vy;
-        if (s.x < 0 || s.x > canvas.offsetWidth) s.vx *= -1;
-        if (s.y < 0 || s.y > canvas.offsetHeight) s.vy *= -1;
-        ctx.globalAlpha = s.opacity;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      animId = requestAnimationFrame(render);
-    };
-    init();
-    render();
-    window.addEventListener("resize", () => { init(); });
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
-  }, []);
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-    />
-  );
+interface Competence {
+  nom: string;
+  /** 4 = usage quotidien, 1 = en cours d'apprentissage */
+  cran: 1 | 2 | 3 | 4;
 }
 
-// Ajout de propriétés pour le style (glow, shadow colors)
-const SECTION_STYLES = {
-  "Développement Frontend & UI": {
-    gradient: "from-[#ff61d8] to-[#7d6fff]",
-    bar: "bg-gradient-to-r from-[#ff61d8] to-[#7d6fff]",
-    glow: "shadow-[0_0_20px_rgba(255,97,216,0.4)]", // Glow rose/violet
-    textAccent: "text-[#ff61d8]"
-  },
-  "Backend & Architecture": {
-    gradient: "from-[#00ff9d] to-[#00c772]",
-    bar: "bg-gradient-to-r from-[#00ff9d] to-[#00c772]",
-    glow: "shadow-[0_0_20px_rgba(0,255,157,0.4)]", // Glow vert
-    textAccent: "text-[#00ff9d]"
-  },
-  "Intelligence Artificielle": {
-    gradient: "from-[#00f7ff] to-[#00dcf8]",
-    bar: "bg-gradient-to-r from-[#00f7ff] to-[#00dcf8]",
-    glow: "shadow-[0_0_20px_rgba(0,247,255,0.4)]", // Glow cyan
-    textAccent: "text-[#00f7ff]"
-  },
-} as const;
+interface Domaine {
+  titre: string;
+  description: string;
+  competences: Competence[];
+}
 
-type SectionKey = keyof typeof SECTION_STYLES;
-interface Skill { name: string; level: number }
-interface Section { title: SectionKey; description: string; skills: Skill[] }
-
-// Données (Inchangées)
-const SECTIONS: Section[] = [
+const DOMAINES: Domaine[] = [
   {
-    title: "Développement Frontend & UI",
-    description: "Création d'interfaces immersives avec Next.js et Three.js.",
-    skills: [
-      { name: "React / Next.js", level: 95 }, 
-      { name: "TypeScript / JS (ES6+)", level: 90 },
-      { name: "Tailwind CSS", level: 92 },
-      { name: "Three.js (3D Web)", level: 75 },
+    titre: "Interface et rendu",
+    description:
+      "Ce que je fais le plus, et depuis le plus longtemps. Des interfaces qui chargent vite et qui tiennent sur mobile.",
+    competences: [
+      { nom: "React / Next.js", cran: 4 },
+      { nom: "TypeScript, JavaScript ES6+", cran: 4 },
+      { nom: "Tailwind CSS", cran: 4 },
+      { nom: "Three.js et rendu 3D web", cran: 2 },
     ],
   },
   {
-    title: "Backend & Architecture",
-    description: "Solutions robustes, bases de données et déploiement.",
-    skills: [
-      { name: "Node.js / Python (FastAPI)", level: 85 },
-      { name: "SQL / PostgreSQL (Supabase)", level: 82 },
-      { name: "Docker / Linux", level: 70 },
-      { name: "Git / GitHub / Vercel", level: 88 },
+    titre: "Serveur et données",
+    description:
+      "Ce qui tourne derrière : les API, les bases, et la mise en ligne de tout ça.",
+    competences: [
+      { nom: "Node.js, Python (FastAPI)", cran: 3 },
+      { nom: "SQL, PostgreSQL, Supabase", cran: 3 },
+      { nom: "Git, GitHub, Vercel", cran: 3 },
+      { nom: "Docker, Linux", cran: 2 },
     ],
   },
   {
-    title: "Intelligence Artificielle",
-    description: "Intégration de LLM et pipelines de données.",
-    skills: [
-      { name: "Python & NLP", level: 85 },
-      { name: "Hugging Face / LLM", level: 80 }, 
-      { name: "TensorFlow (Notions)", level: 60 }, 
-      { name: "Agents IA & Chatbots", level: 78 }, 
+    titre: "Intelligence artificielle",
+    description:
+      "Le terrain sur lequel je veux passer les deux prochaines années. Aujourd'hui : intégration de modèles existants.",
+    competences: [
+      { nom: "Python appliqué au NLP", cran: 3 },
+      { nom: "Hugging Face, modèles de langage", cran: 3 },
+      { nom: "Agents conversationnels", cran: 2 },
+      { nom: "TensorFlow", cran: 1 },
     ],
   },
 ];
 
-// Accordion animation variants (Inchangées)
-const variants = {
-  open: { height: "auto", opacity: 1 },
-  collapsed: { height: 0, opacity: 0 },
+const LIBELLES: Record<Competence["cran"], string> = {
+  4: "Quotidien",
+  3: "Solide",
+  2: "À l'aise",
+  1: "En cours",
 };
 
+/* ------------------------------------------------------------------ */
+/* Jauge à quatre crans                                                */
+/* ------------------------------------------------------------------ */
+
+function Jauge({
+  cran,
+  delai,
+  reduced,
+}: {
+  cran: number;
+  delai: number;
+  reduced: boolean | null;
+}) {
+  return (
+    <span aria-hidden className="flex items-center gap-1.5">
+      {[1, 2, 3, 4].map((i) => {
+        const allume = i <= cran;
+        return (
+          <motion.span
+            key={i}
+            initial={reduced ? false : { scaleY: 0.25, opacity: 0.35 }}
+            whileInView={{ scaleY: 1, opacity: 1 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{
+              duration: 0.4,
+              delay: reduced ? 0 : delai + i * 0.06,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className={`block h-4 w-[3px] origin-bottom ${
+              allume
+                ? "bg-[#FF3D8A] shadow-[0_0_9px_rgba(255,61,138,0.85)]"
+                : "bg-white/12"
+            }`}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
 export default function SkillsPage() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
+  const reduced = useReducedMotion();
+
+  const ignite = reduced
+    ? { opacity: 1 }
+    : {
+        opacity: [0, 1, 0.2, 1, 0.4, 1],
+        transition: {
+          duration: 1.1,
+          times: [0, 0.08, 0.18, 0.34, 0.48, 0.72],
+          ease: "easeOut" as const,
+        },
+      };
 
   return (
-    // Fond légèrement plus profond
-    <main className="relative overflow-hidden bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011] min-h-screen text-white selection:bg-pink-500/30">
-      <ParticleBackground />
-      
-      {/* Conteneur principal avec un léger glow global */}
-      <div className="relative z-10 max-w-3xl mx-auto p-6 space-y-8 mt-12">
-        
-        {/* Titre amélioré : Plus gros, dégradé et ombre portée */}
-        <motion.h1 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-5xl md:text-6xl font-extrabold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]"
-        >
-          Mes Compétences
-        </motion.h1>
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
+      <Backdrop />
 
-        {SECTIONS.map((sec, idx) => {
-          const style = SECTION_STYLES[sec.title];
-          const isOpen = openIndex === idx;
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+        {/* ---------------- Ouverture ---------------- */}
+        <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <motion.h1
+            initial={reduced ? false : { opacity: 0 }}
+            animate={ignite}
+            style={{
+              textShadow:
+                "0 0 1px rgba(255,255,255,0.85), 0 0 14px rgba(255,61,138,0.45), 0 0 46px rgba(139,92,246,0.4), 0 0 100px rgba(139,92,246,0.2)",
+            }}
+            className="font-display text-[clamp(2.1rem,4.6vw,3.9rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-white lg:col-span-7"
+          >
+            Ce que je sais faire, et à quel point je le sais.
+          </motion.h1>
 
-          return (
-            // Card Container: Glassmorphism + Glow on hover based on section color
-            <motion.div 
-              key={sec.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`rounded-2xl overflow-hidden backdrop-blur-md border border-white/10 transition-all duration-300 ${isOpen ? style.glow : 'hover:border-white/20 hover:' + style.glow}`}
-            >
-              {/* Accordion Button: More translucent, better hover state */}
-              <button
-                onClick={() => toggle(idx)}
-                className={`w-full flex justify-between items-center p-5 text-left transition-colors duration-300
-                  ${isOpen ? 'bg-white/10' : 'bg-white/5 hover:bg-white/10'}`}
-              >
-                <span className={`text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${style.gradient}`}>
-                  {sec.title}
-                </span>
-                <motion.span
-                  animate={{ rotate: isOpen ? 45 : 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className={`text-3xl ${isOpen ? style.textAccent : 'text-gray-400'}`}
-                >
-                  +
-                </motion.span>
-              </button>
-              
-              {/* Accordion Content */}
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.div
-                    key="content"
-                    initial="collapsed"
-                    animate="open"
-                    exit="collapsed"
-                    variants={variants}
-                    transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }} // Easing plus fluide
-                    className="bg-black/40 px-6 pb-8 pt-2"
-                  >
-                    <p className="text-gray-300 mb-6 text-lg font-light">{sec.description}</p>
-                    <div className="space-y-6">
-                      {sec.skills.map((sk, i) => (
-                        <div key={sk.name}>
-                          {/* Labels: Percentage colored and pushed to the right */}
-                          <div className="flex justify-between items-end mb-2">
-                            <span className="font-medium text-gray-200">{sk.name}</span>
-                            <span className={`font-bold ${style.textAccent}`}>{sk.level}%</span>
-                          </div>
-                          
-                          {/* Skill Bar: Darker background container */}
-                          <div className="w-full bg-black/50 h-4 rounded-full overflow-hidden p-[2px] border border-white/5">
-                            {/* Animated Bar: Glowing "Neon Tube" effect */}
-                            <motion.div
-                              className={`${style.bar} h-full rounded-full shadow-[0_0_10px_currentColor]`}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${sk.level}%` }}
-                              transition={{ duration: 1.2, ease: 'easeOut', delay: i * 0.1 }}
-                              style={{ color: style.textAccent }} // Hack to pass color to shadow
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
-        
-        {/* Footer Link Enhanced */}
-        <div className="text-center mt-16">
-          <Link href="/" className="inline-flex items-center gap-2 text-[#7d6fff] hover:text-pink-400 transition-colors duration-300 font-semibold text-lg group">
-            <span className="group-hover:-translate-x-1 transition-transform">←</span> Retour à l&apos;accueil
-          </Link>
+          <p className="max-w-[46ch] leading-relaxed text-[#CFC4E4] lg:col-span-5">
+            Pas de pourcentages : ils ne veulent rien dire. Quatre crans, du
+            quotidien à ce que je découvre encore. Vous saurez sur quoi
+            m&apos;envoyer dès la première semaine, et sur quoi j&apos;aurai
+            besoin d&apos;un mois.
+          </p>
+        </header>
+
+        {/* ---------------- Légende ---------------- */}
+        <div className="mt-16 flex flex-wrap items-center gap-x-10 gap-y-4 border-y border-white/[0.08] py-5">
+          {([4, 3, 2, 1] as const).map((c) => (
+            <span key={c} className="flex items-center gap-3 text-[0.82rem] text-[#7E7196]">
+              <Jauge cran={c} delai={0} reduced={reduced} />
+              {LIBELLES[c]}
+            </span>
+          ))}
         </div>
-      </div>
-    </main>
+
+        {/* ---------------- Domaines ---------------- */}
+        <div className="mt-4">
+          {DOMAINES.map((domaine) => (
+            <section key={domaine.titre} className="mt-24 first:mt-20">
+              <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+                {/* Intitulé du domaine */}
+                <div className="lg:col-span-4">
+                  <h2 className="font-display text-[clamp(1.5rem,2.6vw,2.1rem)] font-bold leading-tight tracking-tight text-white">
+                    {domaine.titre}
+                  </h2>
+                  <p className="mt-4 max-w-[42ch] leading-relaxed text-[#9C8FB8]">
+                    {domaine.description}
+                  </p>
+                </div>
+
+                {/* Compétences */}
+                <ul className="lg:col-span-8">
+                  {domaine.competences.map((c, i) => (
+                    <li
+                      key={c.nom}
+                      className="group flex items-center justify-between gap-6 border-t border-white/[0.08] py-5 last:border-b"
+                    >
+                      <span className="font-display text-[1.1rem] font-medium text-[#E4DBF5] transition-colors duration-200 group-hover:text-white">
+                        {c.nom}
+                      </span>
+
+                      <span className="flex shrink-0 items-center gap-5">
+                        <span className="w-[5.5rem] text-right text-[0.8rem] text-[#7E7196] transition-colors duration-200 group-hover:text-[#C4B5FD]">
+                          {LIBELLES[c.cran]}
+                        </span>
+                        <Jauge
+                          cran={c.cran}
+                          delai={i * 0.08}
+                          reduced={reduced}
+                        />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          ))}
+        </div>
+
+        {/* ---------------- Clôture ---------------- */}
+        <section className="mt-32 border-t border-white/10 pt-16">
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+            <p className="max-w-[38ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
+              La liste est honnête. Le mieux reste de regarder ce que j&apos;en
+              ai fait.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-8">
+              <Link
+                href="/projects"
+                className="inline-flex items-center border border-[#FF3D8A] px-8 py-4 font-display text-[0.95rem] font-semibold tracking-wide text-[#FF3D8A] shadow-[0_0_28px_-10px_rgba(255,61,138,0.9)] transition-colors duration-200 hover:bg-[#FF3D8A] hover:text-[#0B0212] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309]"
+              >
+                Voir mes projets
+              </Link>
+
+              <Link
+                href="/"
+                className="border-b border-transparent pb-1 text-[0.9rem] text-[#9C8FB8] transition-colors duration-200 hover:border-[#FF3D8A] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309]"
+              >
+                Retour à l&apos;accueil
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

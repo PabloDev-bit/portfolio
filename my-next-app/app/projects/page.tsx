@@ -1,293 +1,449 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { FaGithub, FaExternalLinkAlt, FaRobot, FaLaptopCode } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useVelocity,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
+import { FiGithub, FiArrowUpRight } from "react-icons/fi";
+import Backdrop from "../(components)/Backdrop";
 
-// =============================================================
-// COMPOSANT DE FOND (Particules)
-// =============================================================
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    let animId: number;
-    const dpr = window.devicePixelRatio || 1;
-    const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
-    
-    const init = () => {
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-      stars.length = 0;
-      
-      const numStars = Math.floor((window.innerWidth * window.innerHeight) / 15000); 
+/* ------------------------------------------------------------------ */
+/* Données                                                             */
+/* ------------------------------------------------------------------ */
 
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          r: Math.random() * 1.5 + 0.3,
-          opacity: Math.random() * 0.5 + 0.3,
-          vx: (Math.random() - 0.5) * 0.05,
-          vy: (Math.random() - 0.5) * 0.05,
-        });
-      }
-    };
+type Categorie = "web" | "ia";
 
-    const render = () => {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      
-      const gradient = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, window.innerWidth);
-      gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
-      gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
-
-      stars.forEach((s) => {
-        s.x += s.vx;
-        s.y += s.vy;
-        
-        if (s.x < 0) s.x = window.innerWidth;
-        if (s.x > window.innerWidth) s.x = 0;
-        if (s.y < 0) s.y = window.innerHeight;
-        if (s.y > window.innerHeight) s.y = 0;
-        
-        ctx.globalAlpha = s.opacity;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      animId = requestAnimationFrame(render);
-    };
-
-    init();
-    render();
-    window.addEventListener("resize", init);
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[0]" />;
-}
-
-/**
- * --------------------------------------------------
- * Types & Data
- * --------------------------------------------------
- */
-
-type ProjectTab = "web" | "ia";
-
-interface Project {
-  title: string;
+interface Projet {
+  titre: string;
   description: string;
-  link: string;
+  lien: string;
   github?: string;
-  image: string; 
+  image: string;
   stack: string[];
-  type: ProjectTab;
+  categorie: Categorie;
+  annee: string;
 }
 
-// ICI : J'AI REMIS TES CHEMINS D'IMAGES LOCAUX (/images/...)
-const PROJECTS: Project[] = [
+const PROJETS: Projet[] = [
   {
-    title: "MHNet – Premium Cleaning",
+    titre: "MHNet – Premium Cleaning",
     description:
-      "Site vitrine ultra-rapide pour une entreprise suisse de nettoyage textile haut de gamme. Design épuré, animations fluides et SEO optimisé.",
-    link: "https://site-web-mhnet.vercel.app/",
-    image: "/images/mhnet.png", // <--- Ton image
+      "Site vitrine ultra-rapide pour une entreprise suisse de nettoyage textile haut de gamme. Design épuré, animations fluides, SEO optimisé.",
+    lien: "https://site-web-mhnet.vercel.app/",
+    image: "/images/mhnet.png",
     stack: ["Next.js", "Tailwind CSS", "Framer Motion"],
-    type: "web",
+    categorie: "web",
+    annee: "2025",
   },
   {
-    title: "CostCrafter",
+    titre: "CostCrafter",
     description:
       "Comparateur de coût de la vie pour expatriés. Analyse interactive des loyers, transports et alimentation dans différentes villes du monde.",
-    link: "https://costcrafters.vercel.app/",
-    image: "/images/costcrafter.png", // <--- Ton image
+    lien: "https://costcrafters.vercel.app/",
+    image: "/images/costcrafter.png",
     stack: ["React", "Firebase", "Recharts"],
-    type: "web",
+    categorie: "web",
+    annee: "2025",
   },
   {
-    title: "Finance Forecast Hub",
+    titre: "Finance Forecast Hub",
     description:
-      "Dashboard financier en temps réel connectant l'API Yahoo Finance pour visualiser les tendances boursières et indicateurs économiques.",
-    link: "https://finance-forecast-hub.vercel.app/",
-    image: "/images/finance.jpg", // <--- Ton image
+      "Dashboard financier en temps réel branché sur l'API Yahoo Finance pour visualiser tendances boursières et indicateurs économiques.",
+    lien: "https://finance-forecast-hub.vercel.app/",
+    image: "/images/finance.jpg",
     stack: ["Next.js", "API Yahoo", "Data Viz"],
-    type: "web",
-  },
-  {
-    title: "ANABOLIC AI",
-    description:
-      "Agent IA local développé en Python. Capable d'assister dans le workflow de développement et d'exécuter des tâches complexes sans dépendance cloud.",
-    link: "#", 
-    github: "https://github.com/PabloDev-bit",
-    // J'ai laissé une image par défaut ici car tu n'avais pas spécifié d'image pour Anabolic
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000&auto=format&fit=crop", 
-    stack: ["Python", "LLM", "Local API", "Agentic"],
-    type: "ia",
+    categorie: "web",
+    annee: "2025",
   },
 ];
 
-export default function ProjectsPage() {
-  const [tab, setTab] = useState<ProjectTab>("web");
+const FILTRES = [
+  { id: "tous", label: "Tous" },
+  { id: "web", label: "Développement web" },
+  { id: "ia", label: "Intelligence artificielle" },
+] as const;
 
-  const filtered = PROJECTS.filter((p) => p.type === tab);
+type FiltreId = (typeof FILTRES)[number]["id"];
+
+/* ------------------------------------------------------------------ */
+/* Aperçu qui suit le curseur                                          */
+/* ------------------------------------------------------------------ */
+
+function CursorPreview({ projet }: { projet: Projet | null }) {
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+
+  const x = useSpring(mx, { stiffness: 170, damping: 22, mass: 0.5 });
+  const y = useSpring(my, { stiffness: 170, damping: 22, mass: 0.5 });
+
+  // L'inclinaison suit la vitesse horizontale du geste.
+  const vx = useVelocity(x);
+  const rotate = useTransform(vx, [-2200, 2200], [-14, 14], { clamp: true });
+  const skew = useTransform(vx, [-2200, 2200], [-6, 6], { clamp: true });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      mx.set(e.clientX);
+      my.set(e.clientY);
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [mx, my]);
 
   return (
-    <div className="relative min-h-screen w-full bg-[#02000a] text-white overflow-x-hidden selection:bg-pink-500/30 font-sans">
-      
-      {/* Background */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
-      <ParticleBackground />
-
-      <main className="relative z-10 container mx-auto px-4 md:px-8 py-24 md:py-32">
-        
-        {/* Header Section */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-4xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)]"
-          >
-            Mes Réalisations
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-gray-300 text-lg leading-relaxed"
-          >
-            Une collection de projets où la <span className="text-pink-400">technique</span> rencontre la <span className="text-cyan-400">créativité</span>.
-          </motion.p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex justify-center mb-16">
-          <div className="inline-flex rounded-full bg-white/5 p-1 border border-white/10 backdrop-blur-md">
-            {[
-              { id: "web", label: "Développement Web", icon: <FaLaptopCode /> },
-              { id: "ia", label: "Intelligence Artificielle", icon: <FaRobot /> },
-            ].map(({ id, label, icon }) => (
-              <button
-                key={id}
-                onClick={() => setTab(id as ProjectTab)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  tab === id 
-                    ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)]" 
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <span className="text-lg">{icon}</span>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Grid */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid gap-8 md:gap-10 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mx-auto max-w-7xl"
-          >
-            {filtered.map((project, index) => (
-              <ProjectCard key={index} project={project} index={index} />
-            ))}
-          </motion.div>
+    <motion.div
+      aria-hidden
+      style={{ x, y, rotate, skewX: skew }}
+      className="pointer-events-none fixed left-0 top-0 z-30 hidden lg:block"
+    >
+      <div className="-translate-x-1/2 -translate-y-1/2">
+        <AnimatePresence mode="popLayout">
+          {projet && (
+            <motion.div
+              key={projet.titre}
+              initial={{ opacity: 0, scale: 0.86 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="relative h-[15rem] w-[24rem] overflow-hidden border border-[#FF3D8A]/40 shadow-[0_0_60px_-12px_rgba(255,61,138,0.55)]"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={projet.image}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#060309]/70 via-transparent to-transparent" />
+            </motion.div>
+          )}
         </AnimatePresence>
-
-      </main>
-    </div>
+      </div>
+    </motion.div>
   );
 }
 
-// =============================================================
-// CARTE PROJET
-// =============================================================
-function ProjectCard({ project, index }: { project: Project, index: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
-      whileHover={{ y: -10 }}
-      className="group relative flex flex-col rounded-3xl bg-[#0d0d12] border border-white/10 overflow-hidden hover:shadow-[0_0_40px_rgba(168,85,247,0.2)] hover:border-purple-500/50 transition-all duration-500"
-    >
-      {/* Image Container */}
-      <div className="relative h-48 w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d12] to-transparent z-10" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={project.image}
-          alt={project.title}
-          className="h-full w-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-        />
-        
-        {/* Type Badge */}
-        <div className="absolute top-4 right-4 z-20 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-xs font-bold text-white uppercase tracking-wider">
-          {project.type === 'web' ? 'Web App' : 'AI Agent'}
-        </div>
-      </div>
+/* ------------------------------------------------------------------ */
+/* Une ligne de projet                                                 */
+/* ------------------------------------------------------------------ */
 
-      {/* Content */}
-      <div className="flex flex-col flex-grow p-6 relative z-20">
-        <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">
-          {project.title}
-        </h3>
-        <p className="text-gray-400 text-sm leading-relaxed mb-6 flex-grow line-clamp-3">
-          {project.description}
+function LigneProjet({
+  projet,
+  index,
+  actif,
+  onHover,
+  reduced,
+}: {
+  projet: Projet;
+  index: number;
+  actif: boolean;
+  onHover: (p: Projet | null) => void;
+  reduced: boolean | null;
+}) {
+  return (
+    <motion.li
+      layout
+      initial={
+        reduced
+          ? { opacity: 0 }
+          : { opacity: 0, clipPath: "inset(0 100% 0 0)", y: 18 }
+      }
+      animate={
+        reduced
+          ? { opacity: 1 }
+          : { opacity: 1, clipPath: "inset(0 0% 0 0)", y: 0 }
+      }
+      exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
+      transition={{
+        duration: 0.6,
+        delay: reduced ? 0 : index * 0.09,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      onMouseEnter={() => onHover(projet)}
+      onMouseLeave={() => onHover(null)}
+      className="group relative border-b border-white/[0.08]"
+    >
+      {/* Filet qui traverse la rangée au survol */}
+      <motion.span
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-px origin-left bg-[#FF3D8A] shadow-[0_0_12px_rgba(255,61,138,0.9)]"
+        initial={false}
+        animate={{ scaleX: actif ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      />
+
+      <div className="grid gap-5 py-10 md:grid-cols-12 md:items-baseline md:gap-8 lg:py-12">
+        <span className="text-[0.82rem] text-[#FF3D8A]/80 md:col-span-1">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        <div className="md:col-span-5">
+          <a
+            href={projet.lien}
+            {...(projet.lien.startsWith("http")
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            className="inline-flex items-baseline gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309]"
+          >
+            <motion.h2
+              animate={
+                actif && !reduced
+                  ? {
+                      x: 10,
+                      textShadow:
+                        "0 0 1px rgba(255,255,255,0.9), 0 0 20px rgba(255,61,138,0.6), 0 0 60px rgba(139,92,246,0.45)",
+                    }
+                  : { x: 0, textShadow: "0 0 0px rgba(255,61,138,0)" }
+              }
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display text-[clamp(1.7rem,3.4vw,2.9rem)] font-bold leading-tight tracking-tight text-white"
+            >
+              {projet.titre}
+            </motion.h2>
+            <FiArrowUpRight
+              className="shrink-0 text-[#FF3D8A] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              size={20}
+            />
+          </a>
+
+          {/* Aperçu en ligne : mobile et tablette, là où il n'y a pas de curseur */}
+          <div className="mt-5 aspect-[16/10] w-full overflow-hidden border border-white/10 lg:hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={projet.image}
+              alt={`Aperçu de ${projet.titre}`}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
+
+        <p className="max-w-[52ch] leading-relaxed text-[#9C8FB8] md:col-span-4">
+          {projet.description}
         </p>
 
-        {/* Tech Stack */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {project.stack.map((tech) => (
-            <span
-              key={tech}
-              className="px-2.5 py-1 text-xs font-medium rounded-md bg-white/5 text-purple-200 border border-white/5 group-hover:border-purple-500/30 transition-colors"
-            >
-              {tech}
-            </span>
-          ))}
-        </div>
-
-        {/* Links */}
-        <div className="flex items-center gap-4 mt-auto pt-4 border-t border-white/10">
-          <Link
-            href={project.link}
-            target="_blank"
-            className="flex items-center gap-2 text-sm font-semibold text-white hover:text-pink-400 transition-colors"
-          >
-            <FaExternalLinkAlt /> Voir le projet
-          </Link>
-          {project.github && (
-            <Link
-              href={project.github}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 md:col-span-2 md:flex-col md:items-end md:gap-2">
+          <p className="text-[0.8rem] text-[#7E7196]">{projet.annee}</p>
+          <p className="text-[0.8rem] text-[#7E7196] md:text-right">
+            {projet.stack.join(", ")}
+          </p>
+          {projet.github && (
+            <a
+              href={projet.github}
               target="_blank"
-              className="flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors ml-auto"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[0.82rem] text-[#C4B5FD] transition-colors duration-200 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309]"
             >
-              <FaGithub className="text-lg" /> Code
-            </Link>
+              <FiGithub size={15} /> Code source
+            </a>
           )}
         </div>
       </div>
-      
-      {/* Glow Effect */}
-      <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-pink-500 to-purple-600 opacity-0 group-hover:opacity-20 blur-md transition duration-500 -z-10" />
-    </motion.div>
+    </motion.li>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Ligne « à venir » : même grille, mais inerte                        */
+/* ------------------------------------------------------------------ */
+
+function LigneAVenir({
+  index,
+  reduced,
+}: {
+  index: number;
+  reduced: boolean | null;
+}) {
+  return (
+    <motion.li
+      layout
+      initial={reduced ? { opacity: 0 } : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{
+        duration: 0.6,
+        delay: reduced ? 0 : index * 0.09,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className="border-b border-dashed border-white/[0.12]"
+    >
+      <div className="grid gap-5 py-10 md:grid-cols-12 md:items-baseline md:gap-8 lg:py-12">
+        <span className="text-[0.82rem] text-[#7E7196]">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        <div className="md:col-span-5">
+          <h2 className="font-display text-[clamp(1.7rem,3.4vw,2.9rem)] font-bold leading-tight tracking-tight text-[#5C5273]">
+            Projet IA
+          </h2>
+          <p className="mt-3 inline-flex items-center gap-2.5 text-[0.82rem] text-[#C4B5FD]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C4B5FD]" />
+            En cours d&apos;écriture
+          </p>
+        </div>
+
+        <p className="max-w-[52ch] leading-relaxed text-[#7E7196] md:col-span-4">
+          Je développe un nouveau projet autour des modèles de langage. Il
+          apparaîtra ici le jour où il tournera en production, pas avant.
+        </p>
+
+        <div className="md:col-span-2 md:text-right">
+          <p className="text-[0.8rem] text-[#5C5273]">2026</p>
+        </div>
+      </div>
+    </motion.li>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+export default function ProjectsPage() {
+  const reduced = useReducedMotion();
+  const [filtre, setFiltre] = useState<FiltreId>("tous");
+  const [survole, setSurvole] = useState<Projet | null>(null);
+  const [pointerFin, setPointerFin] = useState(false);
+  const listeRef = useRef<HTMLUListElement | null>(null);
+
+  useEffect(() => {
+    setPointerFin(window.matchMedia("(pointer: fine)").matches);
+  }, []);
+
+  const projets =
+    filtre === "tous" ? PROJETS : PROJETS.filter((p) => p.categorie === filtre);
+
+  // Le projet IA n'existe pas encore : on l'annonce au lieu de laisser un vide.
+  const afficherAVenir = filtre !== "web";
+  const nombre = projets.length + (afficherAVenir ? 1 : 0);
+
+  const ignite = reduced
+    ? { opacity: 1 }
+    : {
+        opacity: [0, 1, 0.2, 1, 0.4, 1],
+        transition: {
+          duration: 1.1,
+          times: [0, 0.08, 0.18, 0.34, 0.48, 0.72],
+          ease: "easeOut" as const,
+        },
+      };
+
+  return (
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
+      <Backdrop />
+
+      {pointerFin && !reduced && (
+        <CursorPreview projet={survole} />
+      )}
+
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+        {/* ---------------- Ouverture ---------------- */}
+        <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <motion.h1
+            initial={reduced ? false : { opacity: 0 }}
+            animate={ignite}
+            style={{
+              textShadow:
+                "0 0 1px rgba(255,255,255,0.85), 0 0 14px rgba(255,61,138,0.45), 0 0 46px rgba(139,92,246,0.4), 0 0 100px rgba(139,92,246,0.2)",
+            }}
+            className="font-display text-[clamp(2.1rem,4.6vw,3.9rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-white lg:col-span-7"
+          >
+            Trois projets livrés, en ligne, et que vous pouvez ouvrir tout de
+            suite.
+          </motion.h1>
+
+          <p className="max-w-[46ch] leading-relaxed text-[#CFC4E4] lg:col-span-5">
+            Rien n&apos;est ici pour faire nombre. Chacun répond à un besoin
+            réel, tourne en production, et m&apos;a appris quelque chose que je
+            n&apos;aurais pas trouvé dans un tutoriel.
+          </p>
+        </header>
+
+        {/* ---------------- Filtres ---------------- */}
+        <div className="mt-20 flex flex-wrap items-center gap-2">
+          {FILTRES.map((f) => {
+            const actif = filtre === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFiltre(f.id)}
+                aria-pressed={actif}
+                className={`relative px-5 py-2.5 text-[0.88rem] transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309] ${
+                  actif ? "text-[#FF3D8A]" : "text-[#7E7196] hover:text-[#C4B5FD]"
+                }`}
+              >
+                {actif && (
+                  <motion.span
+                    layoutId="filtre-actif"
+                    aria-hidden
+                    className="absolute inset-0 border border-[#FF3D8A] shadow-[0_0_26px_-10px_rgba(255,61,138,0.9)]"
+                    transition={
+                      reduced
+                        ? { duration: 0 }
+                        : { type: "spring", stiffness: 420, damping: 36 }
+                    }
+                  />
+                )}
+                <span className="relative">{f.label}</span>
+              </button>
+            );
+          })}
+
+          <p className="ml-auto text-[0.8rem] text-[#7E7196]">
+            {nombre} projet{nombre > 1 ? "s" : ""}
+          </p>
+        </div>
+
+        {/* ---------------- Liste ---------------- */}
+        <ul ref={listeRef} className="mt-8 border-t border-white/[0.08]">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {projets.map((p, i) => (
+              <LigneProjet
+                key={p.titre}
+                projet={p}
+                index={i}
+                actif={survole?.titre === p.titre}
+                onHover={setSurvole}
+                reduced={reduced}
+              />
+            ))}
+            {afficherAVenir && (
+              <LigneAVenir key="a-venir" index={projets.length} reduced={reduced} />
+            )}
+          </AnimatePresence>
+        </ul>
+
+        {/* ---------------- Clôture ---------------- */}
+        <section className="mt-28 border-t border-white/10 pt-16">
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+            <p className="max-w-[36ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
+              Le prochain projet, j&apos;aimerais le construire chez vous.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-8">
+              <a
+                href="/contact"
+                className="inline-flex items-center border border-[#FF3D8A] px-8 py-4 font-display text-[0.95rem] font-semibold tracking-wide text-[#FF3D8A] shadow-[0_0_28px_-10px_rgba(255,61,138,0.9)] transition-colors duration-200 hover:bg-[#FF3D8A] hover:text-[#0B0212] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309]"
+              >
+                Me contacter
+              </a>
+
+              <a
+                href="https://github.com/PabloDev-bit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 border-b border-transparent pb-1 text-[0.9rem] text-[#9C8FB8] transition-colors duration-200 hover:border-[#FF3D8A] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309]"
+              >
+                <FiGithub size={16} /> Tout le code sur GitHub
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

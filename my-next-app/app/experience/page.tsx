@@ -1,268 +1,238 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
+import Backdrop from "../(components)/Backdrop";
 
-// =============================================================
-// COMPOSANT DE FOND
-// =============================================================
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    let animId: number;
-    const dpr = window.devicePixelRatio || 1;
-    const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
-    
-    const init = () => {
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-      stars.length = 0;
-      
-      const numStars = Math.floor((window.innerWidth * window.innerHeight) / 15000); 
+/* ------------------------------------------------------------------ */
 
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          r: Math.random() * 1.5 + 0.3,
-          opacity: Math.random() * 0.5 + 0.3,
-          vx: (Math.random() - 0.5) * 0.05,
-          vy: (Math.random() - 0.5) * 0.05,
-        });
-      }
-    };
-
-    const render = () => {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      
-      const gradient = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, window.innerWidth);
-      gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
-      gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
-
-      stars.forEach((s) => {
-        s.x += s.vx;
-        s.y += s.vy;
-        
-        if (s.x < 0) s.x = window.innerWidth;
-        if (s.x > window.innerWidth) s.x = 0;
-        if (s.y < 0) s.y = window.innerHeight;
-        if (s.y > window.innerHeight) s.y = 0;
-        
-        ctx.globalAlpha = s.opacity;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      animId = requestAnimationFrame(render);
-    };
-
-    init();
-    render();
-    window.addEventListener("resize", init);
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[1]" />;
-}
-
-// =============================================================
-// DÉFINITION DES TYPES
-// =============================================================
-interface TimelineData {
-  year: string;
-  title: string;
-  subtitle: string;
+interface Etape {
+  annee: string;
+  titre: string;
+  lieu: string;
   description: string;
-  color: string;
-  icon: string;
 }
 
-const TIMELINE_DATA: TimelineData[] = [
+const ETAPES: Etape[] = [
   {
-    year: "2024 - 2026",
-    title: "Formation Académique & Autodidacte",
-    subtitle: "Cégep de Sherbrooke & Udemy",
-    description: "Acquisition des bases solides en informatique (algorithmique, structures de données) complétée par une formation intensive en ligne sur React et l'écosystème JavaScript moderne.",
-    color: "from-pink-500 to-rose-500",
-    icon: "🎓"
+    annee: "2024 — 2026",
+    titre: "Formation académique et autodidacte",
+    lieu: "Cégep de Sherbrooke, Udemy",
+    description:
+      "Acquisition des bases solides en informatique — algorithmique, structures de données — complétée par une formation intensive en ligne sur React et l'écosystème JavaScript moderne.",
   },
   {
-    year: "2025",
-    title: "Premiers Projets Full-Stack",
-    subtitle: "ProGym Tracker & Portfolio V1",
-    description: "Développement d'applications concrètes pour résoudre des problèmes réels. Mise en pratique de Next.js, Tailwind CSS et des bases de données SQL via Supabase.",
-    color: "from-purple-500 to-indigo-500",
-    icon: "💻"
+    annee: "2025",
+    titre: "Premiers projets full-stack",
+    lieu: "ProGym Tracker, Portfolio V1",
+    description:
+      "Développement d'applications concrètes pour résoudre des problèmes réels. Mise en pratique de Next.js, Tailwind CSS et des bases de données SQL via Supabase.",
   },
   {
-    year: "Fin 2025",
-    title: "Exploration IA & 3D Web",
-    subtitle: "Three.js & Intégration LLM",
-    description: "Plongée dans le web immersif avec Three.js et début de l'intégration de modèles d'IA (Hugging Face) dans des interfaces web réactives.",
-    color: "from-blue-500 to-cyan-500",
-    icon: "🤖"
+    annee: "Fin 2025",
+    titre: "Exploration IA et 3D web",
+    lieu: "Three.js, intégration LLM",
+    description:
+      "Plongée dans le web immersif avec Three.js, et début de l'intégration de modèles d'IA depuis Hugging Face dans des interfaces web réactives.",
   },
   {
-    year: "2026",
-    title: "Futur : Mastère & Alternance",
-    subtitle: "IPSSI - Big Data & IA",
-    description: "Préparation à l'entrée en Mastère spécialisé. Objectif : Devenir un expert capable de fusionner développement web performant et intelligence artificielle.",
-    color: "from-emerald-400 to-green-500",
-    icon: "🚀"
-  }
+    annee: "2026",
+    titre: "Mastère et alternance",
+    lieu: "IPSSI — Big Data & IA",
+    description:
+      "Préparation à l'entrée en mastère spécialisé. L'objectif : fusionner développement web performant et intelligence artificielle sur des projets à l'échelle.",
+  },
 ];
 
-// =============================================================
-// PAGE PRINCIPALE
-// =============================================================
-export default function ExperiencePage() {
-  // Suppression de useScroll ici car inutilisé dans cette version simplifiée
+/* ------------------------------------------------------------------ */
+/* Une étape. Signale au parent quand elle traverse le centre de l'écran */
+/* ------------------------------------------------------------------ */
+
+function Etape({
+  etape,
+  index,
+  onEnter,
+}: {
+  etape: Etape;
+  index: number;
+  onEnter: (i: number) => void;
+}) {
+  const ref = useRef<HTMLLIElement | null>(null);
+  const inView = useInView(ref, { margin: "-45% 0px -45% 0px" });
+
+  useEffect(() => {
+    if (inView) onEnter(index);
+  }, [inView, index, onEnter]);
 
   return (
-    <main className="relative min-h-screen w-full overflow-x-hidden font-sans bg-[#02000a] text-white selection:bg-pink-500/30">
-      
-      {/* COUCHE 1 (z-0) : Background Gradient Statique */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
-      
-      {/* COUCHE 2 (z-1) : Particle Canvas */}
-      <ParticleBackground />
+    <li
+      ref={ref}
+      className="group border-t border-white/[0.08] py-14 first:border-t-0 first:pt-0 lg:py-20"
+    >
+      {/* L'année réapparaît en ligne sur petit écran, où la colonne fixe disparaît */}
+      <p className="mb-4 text-[0.85rem] text-[#FF3D8A] lg:hidden">{etape.annee}</p>
 
-      {/* COUCHE 3 (z-10) : Contenu */}
-      <div className="relative z-10 container mx-auto px-4 md:px-8 py-24 md:py-32">
-        
-        {/* HEADER */}
-        <div className="text-center max-w-4xl mx-auto mb-24 space-y-6">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-5xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)]"
-          >
-            Mon Parcours
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-lg md:text-xl text-gray-300 leading-relaxed"
-          >
-            Une évolution constante, guidée par la passion du code, <br className="hidden md:block" />
-            l&apos;autodidaxie et la volonté de repousser les limites du web.
-          </motion.p>
-        </div>
-
-        {/* TIMELINE CONTAINER */}
-        <div className="relative max-w-5xl mx-auto">
-          
-          {/* Ligne Centrale (Fixe pour éviter les erreurs de hook) */}
-          <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-1 bg-white/10 rounded-full ml-[-2px] md:ml-0">
-            <div 
-              className="w-full h-full bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-500 shadow-[0_0_15px_currentColor] opacity-50"
-            />
-          </div>
-
-          {/* EVENTS */}
-          <div className="space-y-16 md:space-y-24">
-            {TIMELINE_DATA.map((item, index) => (
-              <TimelineItem key={index} item={item} index={index} />
-            ))}
-          </div>
-        </div>
-
-        {/* FOOTER CTA */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-32 text-center"
-        >
-          <h3 className="text-2xl font-bold text-white mb-8">Prêt à écrire la suite ensemble ?</h3>
-          <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
-            <Link 
-              href="/projects"
-              className="px-8 py-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/50 hover:shadow-[0_0_30px_rgba(236,72,153,0.3)] transition-all duration-300 backdrop-blur-md font-semibold text-lg group"
-            >
-              Voir mes Projets <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
-            </Link>
-            <Link 
-              href="/"
-              className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
-            >
-              ← Retour à l&apos;accueil
-            </Link>
-          </div>
-        </motion.div>
-
+      <div className="flex items-baseline gap-5">
+        <span
+          aria-hidden
+          className={`mt-1 h-px w-8 shrink-0 transition-all duration-500 ${
+            inView ? "w-14 bg-[#FF3D8A]" : "bg-white/20"
+          }`}
+        />
+        <h2 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
+          {etape.titre}
+        </h2>
       </div>
-    </main>
+
+      <p className="mt-3 pl-13 text-[0.9rem] text-[#C4B5FD] lg:pl-[52px]">
+        {etape.lieu}
+      </p>
+
+      <p className="mt-5 max-w-[62ch] leading-relaxed text-[#9C8FB8] lg:pl-[52px]">
+        {etape.description}
+      </p>
+    </li>
   );
 }
 
-// =============================================================
-// COMPOSANT ITEM INDIVIDUEL
-// =============================================================
-function TimelineItem({ item, index }: { item: TimelineData, index: number }) {
-  const isEven = index % 2 === 0;
+/* ------------------------------------------------------------------ */
+
+export default function ExperiencePage() {
+  const reduced = useReducedMotion();
+  const [active, setActive] = useState(0);
+
+  const ignite = reduced
+    ? { opacity: 1 }
+    : {
+        opacity: [0, 1, 0.2, 1, 0.4, 1],
+        transition: {
+          duration: 1.1,
+          times: [0, 0.08, 0.18, 0.34, 0.48, 0.72],
+          ease: "easeOut" as const,
+        },
+      };
+
+  const courante = ETAPES[active];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      className={`relative flex flex-col md:flex-row items-start md:items-center ${isEven ? 'md:flex-row-reverse' : ''}`}
-    >
-      
-      {/* 1. Date */}
-      <div className={`hidden md:block w-1/2 px-12 text-${isEven ? 'left' : 'right'}`}>
-        <span className={`text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${item.color} opacity-80`}>
-          {item.year}
-        </span>
-      </div>
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
+      <Backdrop />
 
-      {/* 2. Central Node */}
-      <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-[#0a001f] border-2 border-white/20 z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-        <span className="text-xl">{item.icon}</span>
-        {/* Ring animation */}
-        <div className={`absolute inset-0 rounded-full animate-ping opacity-20 bg-gradient-to-r ${item.color}`} />
-      </div>
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+        {/* ---------------- Ouverture ---------------- */}
+        <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <motion.h1
+            initial={reduced ? false : { opacity: 0 }}
+            animate={ignite}
+            style={{
+              textShadow:
+                "0 0 1px rgba(255,255,255,0.85), 0 0 14px rgba(255,61,138,0.45), 0 0 46px rgba(139,92,246,0.4), 0 0 100px rgba(139,92,246,0.2)",
+            }}
+            className="font-display text-[clamp(2.1rem,4.6vw,3.9rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-white lg:col-span-7"
+          >
+            Chaque année a ajouté une couche : les bases, le produit, l&apos;IA,
+            puis l&apos;échelle.
+          </motion.h1>
 
-      {/* 3. Card Content */}
-      <div className="w-full md:w-1/2 pl-16 md:pl-0 md:px-12">
-        <div className="group relative p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1">
-          
-          {/* Mobile Year Display */}
-          <span className={`md:hidden inline-block text-sm font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r ${item.color}`}>
-            {item.year}
-          </span>
-
-          <h3 className="text-xl md:text-2xl font-bold text-white mb-1 group-hover:text-pink-200 transition-colors">
-            {item.title}
-          </h3>
-          <p className="text-sm text-gray-400 font-medium mb-4 uppercase tracking-wider">
-            {item.subtitle}
+          <p className="max-w-[46ch] leading-relaxed text-[#CFC4E4] lg:col-span-5">
+            Rien de spectaculaire, juste une progression tenue. J&apos;ai commencé
+            par apprendre à faire tourner du code, puis à le rendre utile, et
+            maintenant à le faire tenir sur des volumes qui comptent.
           </p>
-          <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-            {item.description}
-          </p>
+        </header>
 
-          {/* Glow effect on hover */}
-          <div className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-500 -z-10`} />
+        {/* ---------------- Chronologie ---------------- */}
+        <div className="mt-32 grid gap-12 lg:grid-cols-12 lg:gap-16">
+          {/* Colonne fixe : l'année en cours */}
+          <div className="hidden lg:col-span-4 lg:block">
+            <div className="sticky top-40">
+              <div className="min-h-[9rem]">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={courante.annee}
+                    initial={reduced ? false : { opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? undefined : { opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    style={{
+                      textShadow:
+                        "0 0 1px rgba(255,255,255,0.7), 0 0 18px rgba(255,61,138,0.4), 0 0 60px rgba(139,92,246,0.35)",
+                    }}
+                    className="font-display text-[clamp(2.6rem,4.4vw,4rem)] font-extrabold leading-none tracking-[-0.04em] text-white"
+                  >
+                    {courante.annee}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+
+              {/* Repères d'avancement, cliquables */}
+              <ul className="mt-10 space-y-3">
+                {ETAPES.map((e, i) => (
+                  <li key={e.annee}>
+                    <a
+                      href={`#etape-${i}`}
+                      className={`flex items-center gap-4 py-1 text-[0.88rem] transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309] ${
+                        i === active
+                          ? "text-white"
+                          : "text-[#7E7196] hover:text-[#C4B5FD]"
+                      }`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`h-px transition-all duration-500 ${
+                          i === active
+                            ? "w-10 bg-[#FF3D8A] shadow-[0_0_10px_rgba(255,61,138,0.9)]"
+                            : "w-5 bg-white/20"
+                        }`}
+                      />
+                      {e.titre}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="mt-10 text-[0.8rem] text-[#7E7196]">
+                Étape {active + 1} sur {ETAPES.length}
+              </p>
+            </div>
+          </div>
+
+          {/* Colonne défilante : les étapes */}
+          <ol className="lg:col-span-8">
+            {ETAPES.map((etape, i) => (
+              <div key={etape.annee} id={`etape-${i}`} className="scroll-mt-40">
+                <Etape etape={etape} index={i} onEnter={setActive} />
+              </div>
+            ))}
+          </ol>
         </div>
-      </div>
 
-    </motion.div>
+        {/* ---------------- Clôture ---------------- */}
+        <section className="mt-32 border-t border-white/10 pt-16">
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+            <p className="max-w-[34ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
+              La suite s&apos;écrit en alternance, à partir de décembre 2026.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-8">
+              <Link
+                href="/projects"
+                className="inline-flex items-center border border-[#FF3D8A] px-8 py-4 font-display text-[0.95rem] font-semibold tracking-wide text-[#FF3D8A] shadow-[0_0_28px_-10px_rgba(255,61,138,0.9)] transition-colors duration-200 hover:bg-[#FF3D8A] hover:text-[#0B0212] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309]"
+              >
+                Voir mes projets
+              </Link>
+
+              <Link
+                href="/"
+                className="border-b border-transparent pb-1 text-[0.9rem] text-[#9C8FB8] transition-colors duration-200 hover:border-[#FF3D8A] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309]"
+              >
+                Retour à l&apos;accueil
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

@@ -1,369 +1,263 @@
 "use client";
 
-import { motion, useInView, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { FiGithub, FiLinkedin, FiMail, FiArrowUpRight } from "react-icons/fi";
+import { useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { FiGithub, FiLinkedin, FiMail } from "react-icons/fi";
 
-/********************
- * Background Particles (optimisé)
- ********************/
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  a: number; // alpha
-  c: string; // color
-}
-
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [ready, setReady] = useState(false);
-  const prefersReduced = useReducedMotion();
+/* ------------------------------------------------------------------
+ * Fond : halo violet piloté au curseur + trame de points + grain.
+ * Aucun canvas, aucune boucle d'animation : tout est en CSS.
+ * ------------------------------------------------------------------ */
+function Backdrop() {
+  const bloomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
+    const el = bloomRef.current;
+    if (!el) return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
 
     let raf = 0;
-    let particles: Particle[] = [];
-    let width = 0;
-    let height = 0;
-    // CORRECTION ICI : 'const' au lieu de 'let' pour éviter l'erreur de build
-    const dpr = typeof window !== 'undefined' ? Math.max(1, Math.min(2, window.devicePixelRatio || 1)) : 1;
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight * 0.4;
 
-    const COLORS = [
-      "rgba(255,110,199,0.9)", // pink
-      "rgba(157,78,221,0.85)", // purple
-      "rgba(90,24,154,0.85)", // deep purple
-      "rgba(60,9,108,0.85)", // indigo
-    ];
-
-    const resize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      canvas.style.width = width + "px";
-      canvas.style.height = height + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const onMove = (e: MouseEvent) => {
+      x = e.clientX;
+      y = e.clientY;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        el.style.setProperty("--mx", `${x}px`);
+        el.style.setProperty("--my", `${y}px`);
+      });
     };
 
-    const init = () => {
-      particles = [];
-      // Densité contrôlée + bornes pour éviter O(N^2) trop lourd
-      const area = width * height;
-      const baseDensity = width < 768 ? 0.00012 : 0.00018; 
-      const count = Math.max(60, Math.min(220, Math.floor(area * baseDensity)));
-
-      for (let i = 0; i < count; i++) {
-        const speed = (Math.random() * 0.4 + 0.1) * (width < 768 ? 0.8 : 1);
-        particles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: (Math.random() - 0.5) * speed,
-          vy: (Math.random() - 0.5) * speed,
-          r: Math.random() * 3 + 0.8,
-          a: Math.random() * 0.4 + 0.4,
-          c: COLORS[(Math.random() * COLORS.length) | 0],
-        });
-      }
-    };
-
-    // Effet de répulsion simple autour de la souris
-    const mouse = { x: -9999, y: -9999 };
-    const handleMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
-    const handleLeave = () => {
-      mouse.x = -9999;
-      mouse.y = -9999;
-    };
-
-    // Petite ligne entre particules proches
-    const LINK_DIST = Math.min(140, Math.max(80, Math.floor(Math.min(width, height) * 0.18)));
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = "lighter"; // jolis blends
-
-      // Update + points
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-
-        // Répulsion
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < 120) {
-          const force = (120 - dist) / 120;
-          p.vx += (dx / (dist || 1)) * force * 0.12;
-          p.vy += (dy / (dist || 1)) * force * 0.12;
-        }
-
-        p.x += p.vx;
-        p.y += p.vy;
-        // rebond simple
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = p.c;
-        ctx.globalAlpha = p.a;
-        ctx.fill();
-      }
-
-      // Lignes (échantillonnage léger pour perf)
-      ctx.globalAlpha = 0.25;
-      ctx.lineWidth = 1;
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        // On ne regarde que quelques voisins suivants pour éviter O(N^2) complet
-        for (let j = i + 1; j < Math.min(particles.length, i + 18); j++) {
-          const q = particles[j];
-          const dx = p.x - q.x;
-          const dy = p.y - q.y;
-          const d = dx * dx + dy * dy;
-          if (d < LINK_DIST * LINK_DIST) {
-            const alpha = 1 - Math.sqrt(d) / LINK_DIST;
-            ctx.strokeStyle = "rgba(200,160,255," + (alpha * 0.6).toFixed(3) + ")";
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(q.x, q.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      ctx.globalAlpha = 1;
-    };
-
-    let last = performance.now();
-    const loop = () => {
-      if (!document.hidden && !prefersReduced) {
-        const now = performance.now();
-        const dt = now - last;
-        if (dt >= 14) {
-          last = now;
-          draw();
-        }
-      }
-      raf = requestAnimationFrame(loop);
-    };
-
-    const onResize = () => {
-      resize();
-      init();
-    };
-
-    resize();
-    init();
-    setReady(true);
-
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseleave", handleLeave);
-    window.addEventListener("resize", onResize);
-    raf = requestAnimationFrame(loop);
-
+    window.addEventListener("mousemove", onMove, { passive: true });
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseleave", handleLeave);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMove);
+      if (raf) cancelAnimationFrame(raf);
     };
-  }, [prefersReduced]);
+  }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden
-      className={`fixed inset-0 w-full h-full pointer-events-none z-0 transition-opacity duration-700 ${
-        ready ? "opacity-100" : "opacity-0"
-      }`}
-    />
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {/* Base */}
+      <div className="absolute inset-0 bg-[#060309]" />
+
+      {/* Deux nappes de lumière fixes, qui ancrent la composition */}
+      <div className="absolute -left-[18%] top-[-10%] h-[70vh] w-[70vh] rounded-full bg-[#7C3AED] opacity-[0.18] blur-[130px]" />
+      <div className="absolute -right-[12%] bottom-[-18%] h-[60vh] w-[60vh] rounded-full bg-[#FF3D8A] opacity-[0.12] blur-[140px]" />
+
+      {/* Halo qui suit le curseur */}
+      <div
+        ref={bloomRef}
+        className="absolute inset-0 transition-opacity duration-700"
+        style={{
+          ["--mx" as string]: "50%",
+          ["--my" as string]: "40%",
+          background:
+            "radial-gradient(420px circle at var(--mx) var(--my), rgba(139,92,246,0.16), transparent 70%)",
+        }}
+      />
+
+      {/* Trame de points, estompée sur les bords */}
+      <div
+        className="absolute inset-0 opacity-[0.5]"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(196,181,253,0.16) 1px, transparent 1px)",
+          backgroundSize: "34px 34px",
+          maskImage:
+            "radial-gradient(ellipse 80% 65% at 50% 45%, #000 30%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 80% 65% at 50% 45%, #000 30%, transparent 100%)",
+        }}
+      />
+
+      {/* Grain */}
+      <div
+        className="absolute inset-0 opacity-[0.055] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
+    </div>
   );
 }
 
-/********************
- * Composants UI simples
- ********************/
-function PrimaryButton({ href, children }: { href: string; children: React.ReactNode }) {
+/* ------------------------------------------------------------------
+ * Lien social : carré filaire, pas de pastille ronde.
+ * ------------------------------------------------------------------ */
+function Social({
+  href,
+  label,
+  children,
+  external = true,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+  external?: boolean;
+}) {
   return (
     <a
       href={href}
-      className="group relative inline-flex items-center gap-2 rounded-full px-8 py-4 font-semibold text-white bg-gradient-to-r from-pink-600 to-purple-600 shadow-[0_8px_30px_rgb(136,58,234,0.35)] hover:shadow-[0_12px_42px_rgba(136,58,234,0.55)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
+      aria-label={label}
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className="grid h-11 w-11 place-items-center border border-[#C4B5FD]/20 text-[#C4B5FD] transition-colors duration-200 hover:border-[#FF3D8A]/60 hover:text-white hover:shadow-[0_0_24px_-6px_rgba(255,61,138,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309]"
     >
       {children}
-      <FiArrowUpRight className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-      <span className="absolute inset-0 rounded-full bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
     </a>
   );
 }
 
 export default function Home() {
-  const { scrollYProgress } = useScroll();
-  const prefersReduced = useReducedMotion();
-  const scale = useTransform(scrollYProgress, [0, 1], prefersReduced ? [1, 1] : [1, 1.18]);
+  const reduced = useReducedMotion();
 
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-120px" });
+  // Allumage du tube néon : le seul moment animé de la page.
+  const ignite = reduced
+    ? { opacity: 1 }
+    : {
+        opacity: [0, 1, 0.15, 1, 0.35, 1],
+        transition: {
+          duration: 1.15,
+          times: [0, 0.08, 0.18, 0.34, 0.48, 0.72],
+          ease: "easeOut" as const,
+        },
+      };
 
-  const auraY = useTransform(scrollYProgress, [0, 1], [0, 40]);
-
-  const fadeUp = useMemo(
-    () => ({
-      hidden: { opacity: 0, y: 24 },
-      show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
-    }),
-    []
-  );
+  const neon = {
+    textShadow:
+      "0 0 1px rgba(255,255,255,0.9), 0 0 14px rgba(255,61,138,0.55), 0 0 44px rgba(139,92,246,0.45), 0 0 96px rgba(139,92,246,0.22)",
+  };
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden font-sans">
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-black via-[#0f0720] to-[#1a0933]" />
-      <ParticleBackground />
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] text-[#F5EEFF] font-body selection:bg-[#FF3D8A]/30">
+      <Backdrop />
 
-      <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="min-h-screen flex items-center">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center py-20 lg:py-24">
-            
-            {/* Colonne texte */}
-            <motion.div
-              ref={ref}
-              initial="hidden"
-              animate={isInView ? "show" : "hidden"}
-              variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } }}
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-5 pb-28 pt-32 sm:px-8 lg:px-12">
+        <div className="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
+          {/* ---------------- Colonne texte ---------------- */}
+          <div>
+            <motion.h1
+              initial={reduced ? false : { opacity: 0 }}
+              animate={ignite}
+              style={neon}
+              className="font-display font-extrabold leading-[0.84] tracking-[-0.045em] text-white"
             >
-              <motion.h1
-                variants={fadeUp}
-                className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent tracking-tight"
+              <span className="block text-[clamp(3.6rem,11vw,8.5rem)]">Pablo</span>
+              <span className="block text-[clamp(3.6rem,11vw,8.5rem)] text-[#F0E6FF]">
+                Hernandez
+              </span>
+            </motion.h1>
+
+            <div className="mt-8 flex items-center gap-5">
+              <span className="h-px w-16 bg-gradient-to-r from-[#FF3D8A] to-transparent" />
+              <p className="text-[0.95rem] tracking-wide text-[#C4B5FD]">
+                Développeur full-stack, orienté IA et data
+              </p>
+            </div>
+
+            <p className="mt-7 max-w-[46ch] text-[1.05rem] leading-relaxed text-[#CFC4E4]">
+              Je conçois des interfaces web rapides et soignées, et j&apos;y branche
+              des modèles d&apos;IA quand ça sert vraiment le produit. Le détail et
+              la fluidité ne se négocient pas.
+            </p>
+
+            <div className="mt-11 flex flex-wrap items-center gap-5">
+              <a
+                href="/projects"
+                className="group relative inline-flex items-center border border-[#FF3D8A] px-8 py-4 font-display text-[0.95rem] font-semibold tracking-wide text-[#FF3D8A] shadow-[0_0_28px_-10px_rgba(255,61,138,0.9)] transition-colors duration-200 hover:bg-[#FF3D8A] hover:text-[#0B0212] hover:shadow-[0_0_46px_-8px_rgba(255,61,138,0.85)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309]"
               >
-                Pablo, développeur full‑stack
-              </motion.h1>
+                Voir mes projets
+              </a>
 
-              <motion.p
-                variants={fadeUp}
-                className="text-lg md:text-xl text-gray-300 mt-6 md:mt-8 mb-8 md:mb-10 max-w-2xl leading-relaxed"
-              >
-                Je conçois des expériences web immersives et performantes, avec une obsession du détail et de la fluidité. Chaque ligne compte.
-              </motion.p>
+              <div className="flex items-center gap-3">
+                <Social href="https://github.com/PabloDev-bit" label="GitHub">
+                  <FiGithub size={19} />
+                </Social>
+                <Social
+                  href="https://www.linkedin.com/in/pablo-hernandez-19269531a/"
+                  label="LinkedIn"
+                >
+                  <FiLinkedin size={19} />
+                </Social>
+                <Social
+                  href="mailto:pablopro.dev@gmail.com"
+                  label="Envoyer un email"
+                  external={false}
+                >
+                  <FiMail size={19} />
+                </Social>
+              </div>
+            </div>
+          </div>
 
-              {/* CTA + Socials */}
-              <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4 md:gap-5">
-                <PrimaryButton href="/projects">Explorer mes réalisations</PrimaryButton>
+          {/* ---------------- Colonne photo ---------------- */}
+          <div className="relative mx-auto w-full max-w-[380px] lg:max-w-none">
+            {/* Filet décalé : aberration chromatique du cadre */}
+            <div
+              aria-hidden
+              className="absolute -left-2 -top-2 h-full w-full border border-[#8B5CF6]/45"
+            />
+            <div
+              aria-hidden
+              className="absolute -bottom-2 -right-2 h-full w-full border border-[#FF3D8A]/35"
+            />
 
-                <div className="flex items-center gap-3 md:gap-4">
-                  
-                  {/* GITHUB */}
-                  <a
-                    aria-label="GitHub"
-                    href="https://github.com/PabloDev-bit"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
-                  >
-                    <FiGithub size={22} />
-                  </a>
-                  
-                  {/* LINKEDIN */}
-                  <a
-                    aria-label="LinkedIn"
-                    // 👇 AJOUTE TON LIEN LINKEDIN ICI (ex: https://www.linkedin.com/in/ton-profil/)
-                    href="https://www.linkedin.com/in/pablo-hernandez-19269531a/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
-                  >
-                    <FiLinkedin size={22} />
-                  </a>
-                  
-                  {/* MAIL */}
-                  <a
-                    aria-label="Email"
-                    href="mailto:pablopro.dev@gmail.com"
-                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
-                  >
-                    <FiMail size={22} />
-                  </a>
-
-                </div>
-              </motion.div>
-
-              {/* Petit badge "Disponible" */}
-              <motion.div
-                variants={fadeUp}
-                className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-200 backdrop-blur-md"
-              >
-                <span className="relative inline-flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping bg-pink-500" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-pink-400" />
-                </span>
-                Disponible pour missions & stages — Bordeaux 
-              </motion.div>
-            </motion.div>
-
-            {/* Colonne image */}
-            <div className="relative flex justify-center">
-              <motion.div
-                style={{ scale, transformOrigin: "center center" }}
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative"
-              >
-                {/* Aura animée derrière la photo */}
-                <motion.div
-                  style={{ y: auraY }}
-                  aria-hidden
-                  className="absolute -inset-8 rounded-[2rem] bg-gradient-to-r from-pink-500/25 to-purple-500/25 blur-2xl"
-                />
-
-                {/* Cadre verre + photo */}
-                <div className="relative rounded-[1.5rem] p-[1px] bg-gradient-to-br from-white/20 via-white/5 to-transparent">
-                  <div className="rounded-[1.45rem] bg-white/5 backdrop-blur-xl">
-                    <img
-                      src="/images/photoProfil.jpg"
-                      alt="Portrait de Pablo, développeur full‑stack"
-                      className="relative z-10 w-80 h-80 md:w-96 md:h-96 rounded-[1.4rem] object-cover border border-white/10 shadow-2xl"
-                      loading="eager"
-                    />
-                  </div>
-                </div>
-
-                {/* Accent animé discret */}
-                <motion.div
-                  aria-hidden
-                  className="absolute -bottom-8 -right-8 bg-gradient-to-r from-pink-600 to-purple-600 p-4 rounded-2xl shadow-xl"
-                  initial={{ y: 12, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ repeat: prefersReduced ? 0 : Infinity, repeatType: "mirror", duration: 2 }}
-                />
-              </motion.div>
+            <div className="group relative aspect-[3/4] w-full overflow-hidden border border-white/10">
+              <img
+                src="/images/photoProfil.jpg"
+                alt="Portrait de Pablo Hernandez"
+                loading="eager"
+                className="h-full w-full object-cover object-center saturate-[0.25] contrast-[1.08] transition-[filter,transform] duration-700 ease-out group-hover:scale-[1.02] group-hover:saturate-100"
+              />
+              {/* Teinte violette qui se retire au survol */}
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-tr from-[#2A0B47]/70 via-[#7C3AED]/20 to-transparent opacity-100 transition-opacity duration-700 group-hover:opacity-0"
+              />
+              {/* Ombre basse pour asseoir l'image */}
+              <div
+                aria-hidden
+                className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#060309] to-transparent"
+              />
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="relative z-10 border-t border-white/10 bg-gradient-to-b from-black/40 to-transparent">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-gray-400 text-sm mb-4 md:mb-0">
-            © {new Date().getFullYear()} Pablo. Tous droits réservés.
-          </div>
-          <div className="flex space-x-6 text-sm">
-            <a href="/mentions-legales" className="text-gray-400 hover:text-white transition-colors">
+      {/* ---------------- Barre de statut + mentions ---------------- */}
+      <div className="relative z-10 border-t border-white/10 bg-[#060309]/70 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-5 text-[0.82rem] text-[#9C8FB8] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
+          <p className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2">
+              {!reduced && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3D8A] opacity-60" />
+              )}
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF3D8A] shadow-[0_0_10px_rgba(255,61,138,0.9)]" />
+            </span>
+            <span className="text-[#CFC4E4]">
+              Disponible en alternance 24 mois à Bordeaux, dès décembre 2026
+            </span>
+          </p>
+
+          <div className="flex items-center gap-6">
+            <a href="/mentions-legales" className="transition-colors hover:text-white">
               Mentions légales
             </a>
-            <a href="/politique-confidentialite" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="/politique-confidentialite"
+              className="transition-colors hover:text-white"
+            >
               Confidentialité
             </a>
+            <span className="hidden sm:inline">
+              © {new Date().getFullYear()} Pablo
+            </span>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

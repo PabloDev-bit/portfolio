@@ -1,315 +1,280 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import 'mapbox-gl/dist/mapbox-gl.css';
-// Ajout des icônes pour la Finance (ChartLine), le Coût (Coins) et le Premium (Gem)
-import { FaGraduationCap, FaLaptopCode, FaPlaneDeparture, FaChartLine, FaCoins, FaGem } from 'react-icons/fa';
-import { TypeAnimation } from 'react-type-animation';
+import Link from "next/link";
+import { useRef } from "react";
+import { motion, useScroll, useSpring, useReducedMotion } from "framer-motion";
+import Backdrop from "../(components)/Backdrop";
 
-// =============================================================
-// COMPOSANT DE FOND (Particules)
-// =============================================================
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    let animId: number;
-    const dpr = window.devicePixelRatio || 1;
-    const stars: { x: number; y: number; r: number; opacity: number; vx: number; vy: number }[] = [];
-    
-    const init = () => {
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-      stars.length = 0;
-      
-      const numStars = Math.floor((window.innerWidth * window.innerHeight) / 15000); 
+/* ------------------------------------------------------------------ */
+/* Contenu                                                             */
+/* ------------------------------------------------------------------ */
 
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          r: Math.random() * 1.5 + 0.3,
-          opacity: Math.random() * 0.5 + 0.3,
-          vx: (Math.random() - 0.5) * 0.05,
-          vy: (Math.random() - 0.5) * 0.05,
-        });
-      }
-    };
-
-    const render = () => {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      
-      const gradient = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 0, window.innerWidth/2, window.innerHeight/2, window.innerWidth);
-      gradient.addColorStop(0, "rgba(20, 0, 50, 0)");
-      gradient.addColorStop(1, "rgba(5, 0, 20, 0.3)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
-
-      stars.forEach((s) => {
-        s.x += s.vx;
-        s.y += s.vy;
-        
-        if (s.x < 0) s.x = window.innerWidth;
-        if (s.x > window.innerWidth) s.x = 0;
-        if (s.y < 0) s.y = window.innerHeight;
-        if (s.y > window.innerHeight) s.y = 0;
-        
-        ctx.globalAlpha = s.opacity;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      animId = requestAnimationFrame(render);
-    };
-
-    init();
-    render();
-    window.addEventListener("resize", init);
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", init); };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[1]" />;
-}
-
-// Import de la carte Mapbox
-const Map = dynamic(() => import('react-map-gl').then(mod => mod.Map), { ssr: false });
-const Marker = dynamic(() => import('react-map-gl').then(mod => mod.Marker), { ssr: false });
-
-// Token Mapbox
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-
-// Données réelles des projets (Basées sur tes vraies réalisations)
-const realProjects = [
+const PARCOURS = [
   {
-    title: 'MHNet – Premium Cleaning',
-    description: 'Site vitrine ultra-performant pour une entreprise de nettoyage suisse haut de gamme.',
-    tech: ['Next.js', 'Tailwind', 'Framer Motion'],
-    icon: <FaGem className="text-3xl text-cyan-400" />
+    periode: "2024 — 2026",
+    titre: "Cégep de Sherbrooke",
+    texte:
+      "Formation en informatique au Québec. C'est là que j'ai pris l'habitude de finir mes projets au lieu de les empiler.",
   },
   {
-    title: 'CostCrafter',
-    description: 'Comparateur interactif du coût de la vie pour expatriés avec analyse de données.',
-    tech: ['React', 'Firebase', 'Recharts'],
-    icon: <FaCoins className="text-3xl text-purple-400" />
+    periode: "Aujourd'hui",
+    titre: "Bordeaux",
+    texte:
+      "De retour en France, à construire mes projets et à chercher l'entreprise qui m'accueillera en alternance.",
   },
   {
-    title: 'Finance Forecast Hub',
-    description: 'Dashboard financier temps réel connectant l\'API Yahoo Finance pour la visualisation boursière.',
-    tech: ['Next.js', 'API Yahoo', 'Data Viz'],
-    icon: <FaChartLine className="text-3xl text-pink-400" />
-  }
+    periode: "Décembre 2026",
+    titre: "Mastère Big Data & IA, IPSSI Bordeaux",
+    texte:
+      "Deux ans pour passer de l'intégration de modèles à leur mise en production, sur des volumes qui comptent.",
+  },
 ];
 
-export default function About() {
-  
-  return (
-    <div className="relative min-h-screen w-full bg-[#02000a] text-white overflow-x-hidden selection:bg-pink-500/30 font-sans">
-      
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#02000a] via-[#0a001f] to-[#050011]" />
-      <ParticleBackground />
+const STACK = [
+  {
+    groupe: "Interface",
+    items: ["Next.js 15 & React", "TypeScript", "Tailwind CSS", "Three.js / R3F"],
+  },
+  {
+    groupe: "Données & IA",
+    items: ["Python", "LLM & intégration IA", "SQL", "Supabase"],
+  },
+];
 
-      <main className="relative z-10 max-w-7xl mx-auto py-24 px-4 sm:px-6 flex flex-col space-y-32">
-        
-        {/* Section Hero */}
-        <section className="text-center space-y-8 relative pt-12">
-          <motion.div
-            className="relative z-10"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+const PROJETS = [
+  {
+    titre: "MHNet – Premium Cleaning",
+    description:
+      "Site vitrine ultra-performant pour une entreprise de nettoyage suisse haut de gamme.",
+    tech: ["Next.js", "Tailwind", "Framer Motion"],
+  },
+  {
+    titre: "CostCrafter",
+    description:
+      "Comparateur interactif du coût de la vie pour expatriés, avec analyse de données.",
+    tech: ["React", "Firebase", "Recharts"],
+  },
+  {
+    titre: "Finance Forecast Hub",
+    description:
+      "Dashboard financier temps réel branché sur l'API Yahoo Finance pour la visualisation boursière.",
+    tech: ["Next.js", "API Yahoo", "Data Viz"],
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Titre de section : un filet + un intitulé, rien de plus             */
+/* ------------------------------------------------------------------ */
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-14 flex items-center gap-5">
+      <h2 className="font-display text-[1.35rem] font-bold tracking-tight text-white">
+        {children}
+      </h2>
+      <span className="h-px flex-1 bg-gradient-to-r from-[#FF3D8A]/60 via-white/10 to-transparent" />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+export default function About() {
+  const reduced = useReducedMotion();
+
+  // Le fil du parcours se remplit à mesure qu'on descend : le seul
+  // moment animé de la page, et il porte une information réelle.
+  const timelineRef = useRef<HTMLOListElement | null>(null);
+  const { scrollYProgress } = useScroll({
+    target: timelineRef,
+    offset: ["start 75%", "end 65%"],
+  });
+  const fill = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 24,
+    mass: 0.3,
+  });
+
+  const ignite = reduced
+    ? { opacity: 1 }
+    : {
+        opacity: [0, 1, 0.2, 1, 0.4, 1],
+        transition: {
+          duration: 1.1,
+          times: [0, 0.08, 0.18, 0.34, 0.48, 0.72],
+          ease: "easeOut" as const,
+        },
+      };
+
+  return (
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
+      <Backdrop />
+
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+        {/* ---------------- Ouverture ---------------- */}
+        <header className="grid gap-12 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <motion.h1
+            initial={reduced ? false : { opacity: 0 }}
+            animate={ignite}
+            style={{
+              textShadow:
+                "0 0 1px rgba(255,255,255,0.85), 0 0 14px rgba(255,61,138,0.45), 0 0 46px rgba(139,92,246,0.4), 0 0 100px rgba(139,92,246,0.2)",
+            }}
+            className="font-display text-[clamp(2.1rem,4.6vw,3.9rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-white lg:col-span-7"
           >
-            <h1 className="text-5xl sm:text-6xl md:text-8xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-[0_0_35px_rgba(168,85,247,0.5)]">
-              Pablo Hernandez
-            </h1>
-            <div className="text-xl sm:text-2xl text-gray-300 mt-6 font-light tracking-wide h-[40px]">
-              <TypeAnimation
-                sequence={[
-                  'Développeur Full-Stack',
-                  2000,
-                  'Créateur d\'Expériences 3D',
-                  2000,
-                  'Passionné d\'IA & Data',
-                  2000,
-                  'Futur Expert Big Data',
-                  2000,
-                ]}
-                wrapper="span"
-                speed={50}
-                repeat={Infinity}
-              />
-            </div>
-          </motion.div>
+            Formé au Québec, installé à Bordeaux, et du code sans interruption
+            entre les deux.
+          </motion.h1>
+
+          <div className="lg:col-span-5">
+            <p className="max-w-[48ch] text-[1.02rem] leading-relaxed text-[#CFC4E4]">
+              Développeur full-stack, je construis des interfaces et j&apos;y
+              branche de l&apos;IA quand elle sert le produit. Trois dimensions
+              m&apos;occupent en ce moment : le rendu 3D dans le navigateur, les
+              modèles de langage, et tout ce qui rend une page rapide.
+            </p>
+            <p className="mt-5 max-w-[48ch] text-[0.95rem] leading-relaxed text-[#9C8FB8]">
+              Développeur full-stack · Créateur d&apos;expériences 3D ·
+              Passionné d&apos;IA et de data
+            </p>
+          </div>
+        </header>
+
+        {/* ---------------- Parcours ---------------- */}
+        <section className="mt-36">
+          <SectionTitle>Le parcours</SectionTitle>
+
+          <ol ref={timelineRef} className="relative pl-10 sm:pl-14">
+            {/* Rail + remplissage néon */}
+            <span
+              aria-hidden
+              className="absolute left-[7px] top-2 bottom-2 w-px bg-white/10 sm:left-[11px]"
+            />
+            <motion.span
+              aria-hidden
+              style={{ scaleY: fill, transformOrigin: "top" }}
+              className="absolute left-[7px] top-2 bottom-2 w-px bg-[#FF3D8A] shadow-[0_0_12px_rgba(255,61,138,0.8)] sm:left-[11px]"
+            />
+
+            {PARCOURS.map((etape, i) => (
+              <li key={etape.titre} className="relative pb-16 last:pb-0">
+                <span
+                  aria-hidden
+                  className="absolute -left-10 top-[9px] h-[15px] w-[15px] border border-[#FF3D8A]/60 bg-[#060309] sm:-left-14"
+                />
+                <p className="font-body text-[0.82rem] tracking-wide text-[#FF3D8A]">
+                  {etape.periode}
+                </p>
+                <h3 className="mt-2 font-display text-[clamp(1.5rem,2.6vw,2.1rem)] font-bold tracking-tight text-white">
+                  {etape.titre}
+                </h3>
+                <p className="mt-3 max-w-[58ch] leading-relaxed text-[#9C8FB8]">
+                  {etape.texte}
+                </p>
+                <span className="sr-only">
+                  Étape {i + 1} sur {PARCOURS.length}
+                </span>
+              </li>
+            ))}
+          </ol>
         </section>
 
-        {/* Section Parcours & Expertises */}
-        <motion.section 
-          className="grid md:grid-cols-2 gap-8"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Carte Parcours */}
-          <div className="group relative p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-pink-500/30 transition-all duration-500">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-purple-600 rounded-3xl opacity-0 group-hover:opacity-20 blur transition duration-500"></div>
-            <div className="relative flex items-center gap-4 mb-6">
-              <FaGraduationCap className="text-4xl text-pink-400 drop-shadow-[0_0_10px_rgba(244,114,182,0.5)]" />
-              <h2 className="text-3xl font-bold text-white">
-                Mon Ambition
-              </h2>
-            </div>
-            <p className="text-gray-300 leading-relaxed text-lg">
-              Actuellement étudiant au Cégep de Sherbrooke, je me prépare à rejoindre <span className="text-pink-300 font-semibold">l&apos;IPSSI Bordeaux</span> en Décembre 2026 pour un <span className="text-purple-300 font-semibold">Mastère Big Data & IA</span>. 
-              <br/><br/>
-              Je cherche activement une <span className="text-indigo-300 font-semibold">alternance</span> pour appliquer ma passion du code et de l&apos;intelligence artificielle dans des projets d&apos;envergure.
-            </p>
-          </div>
+        {/* ---------------- Stack ---------------- */}
+        <section className="mt-36">
+          <SectionTitle>Ce que j&apos;utilise</SectionTitle>
 
-          {/* Carte Expertises */}
-          <div className="group relative p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-indigo-500/30 transition-all duration-500">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-3xl opacity-0 group-hover:opacity-20 blur transition duration-500"></div>
-            <div className="relative flex items-center gap-4 mb-6">
-              <FaLaptopCode className="text-4xl text-indigo-400 drop-shadow-[0_0_10px_rgba(129,140,248,0.5)]" />
-              <h2 className="text-3xl font-bold text-white">
-                Stack Technique
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-              {['Next.js 15 & React', 'Three.js / R3F', 'Python & IA (LLM)', 'TypeScript', 'Tailwind CSS', 'SQL & Supabase'].map((skill, i) => (
-                <div key={i} className="flex items-center gap-3 group/skill">
-                  <div className="h-2 w-2 bg-indigo-500 rounded-full transition-all duration-300 group-hover/skill:w-6 group-hover/skill:bg-cyan-400 shadow-[0_0_5px_rgba(99,102,241,0.8)]" />
-                  <span className="text-gray-300 font-medium">{skill}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.section>
-
-        {/* Section Projets Phares */}
-        <section className="space-y-16">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
-                Projets Récents
-              </span>
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              Une sélection de mes travaux personnels alliant interactivité, performance et utilité réelle.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {realProjects.map((project, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -10 }}
-                className="group relative p-8 rounded-3xl bg-[#0d0d12] border border-white/5 overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:border-white/20"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
-
-                <div className="relative z-10">
-                  <div className="mb-6 p-4 w-fit rounded-2xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-300">
-                    {project.icon}
-                  </div>
-                  <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-pink-300 transition-colors">{project.title}</h3>
-                  <p className="text-gray-400 mb-6 leading-relaxed text-sm min-h-[60px]">{project.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.tech.map((t, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 text-xs font-semibold bg-white/5 border border-white/10 rounded-full text-indigo-200 group-hover:border-indigo-500/30 transition-colors"
-                      >
-                        {t}
+          <div className="grid gap-x-16 gap-y-12 md:grid-cols-2">
+            {STACK.map((bloc) => (
+              <div key={bloc.groupe}>
+                <p className="mb-6 text-[0.85rem] tracking-wide text-[#C4B5FD]">
+                  {bloc.groupe}
+                </p>
+                <ul>
+                  {bloc.items.map((item) => (
+                    <li
+                      key={item}
+                      className="group flex items-baseline justify-between border-t border-white/[0.08] py-4 last:border-b"
+                    >
+                      <span className="font-display text-[1.15rem] font-medium text-[#E4DBF5] transition-colors duration-200 group-hover:text-white">
+                        {item}
                       </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
+                      <span
+                        aria-hidden
+                        className="h-1.5 w-1.5 rounded-full bg-[#FF3D8A]/0 transition-all duration-300 group-hover:bg-[#FF3D8A] group-hover:shadow-[0_0_10px_rgba(255,61,138,0.9)]"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
-          
-          <div className="text-center">
-             <Link 
-              href="/projects"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors border-b border-transparent hover:border-pink-500 pb-1"
+        </section>
+
+        {/* ---------------- Projets ---------------- */}
+        <section className="mt-36">
+          <SectionTitle>Projets récents</SectionTitle>
+
+          <ul className="border-t border-white/[0.08]">
+            {PROJETS.map((p, i) => (
+              <li key={p.titre}>
+                <Link
+                  href="/projects"
+                  className="group grid gap-4 border-b border-white/[0.08] py-9 transition-colors duration-300 hover:bg-white/[0.025] focus:outline-none focus-visible:bg-white/[0.04] md:grid-cols-12 md:items-baseline md:gap-8 md:px-4"
+                >
+                  <span className="font-body text-[0.82rem] text-[#FF3D8A]/80 md:col-span-1">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+
+                  <h3 className="font-display text-[clamp(1.5rem,2.8vw,2.15rem)] font-bold leading-tight tracking-tight text-white transition-[text-shadow] duration-300 group-hover:[text-shadow:0_0_24px_rgba(255,61,138,0.55)] md:col-span-5">
+                    {p.titre}
+                  </h3>
+
+                  <p className="max-w-[52ch] leading-relaxed text-[#9C8FB8] md:col-span-4">
+                    {p.description}
+                  </p>
+
+                  <p className="text-[0.82rem] text-[#7E7196] md:col-span-2 md:text-right">
+                    {p.tech.join(", ")}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href="/projects"
+            className="mt-10 inline-block border-b border-transparent pb-1 text-[#9C8FB8] transition-colors duration-200 hover:border-[#FF3D8A] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#060309]"
+          >
+            Voir tous les projets
+          </Link>
+        </section>
+
+        {/* ---------------- Clôture ---------------- */}
+        <section className="mt-36 border-t border-white/10 pt-16">
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="flex items-center gap-2.5 text-[0.85rem] text-[#CFC4E4]">
+                <span className="relative flex h-2 w-2">
+                  {!reduced && (
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3D8A] opacity-60" />
+                  )}
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF3D8A] shadow-[0_0_10px_rgba(255,61,138,0.9)]" />
+                </span>
+                Alternance 24 mois, Bordeaux, dès décembre 2026
+              </p>
+              <p className="mt-6 max-w-[42ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
+                Si le poste existe, j&apos;aimerais en entendre parler.
+              </p>
+            </div>
+
+            <Link
+              href="/contact"
+              className="inline-flex w-fit items-center border border-[#FF3D8A] px-8 py-4 font-display text-[0.95rem] font-semibold tracking-wide text-[#FF3D8A] shadow-[0_0_28px_-10px_rgba(255,61,138,0.9)] transition-colors duration-200 hover:bg-[#FF3D8A] hover:text-[#0B0212] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3D8A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060309]"
             >
-              Voir tous les projets <span className="text-pink-500">→</span>
+              Me contacter
             </Link>
           </div>
         </section>
-
-        {/* Section Mobilité / Carte */}
-        <section className="space-y-16">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="inline-flex items-center gap-3 mb-4 justify-center">
-                <FaPlaneDeparture className="text-3xl text-cyan-400" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-cyan-400 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
-                Mobilité Internationale
-              </span>
-            </h2>
-            <p className="text-gray-400 mt-4">
-              De Sherbrooke (Canada) à Bordeaux (France). Prêt pour une nouvelle aventure fin 2026.
-            </p>
-          </motion.div>
-
-          <div className="relative h-[500px] w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-            <Map
-              initialViewState={{
-                longitude: -35, 
-                latitude: 46,
-                zoom: 2.5
-              }}
-              style={{ width: '100%', height: '100%' }}
-              mapStyle="mapbox://styles/mapbox/dark-v11"
-              mapboxAccessToken={MAPBOX_TOKEN}
-              attributionControl={false}
-            >
-                <Marker longitude={-71.898} latitude={45.404} anchor="bottom">
-                    <div className="relative flex flex-col items-center group cursor-pointer">
-                        <div className="w-4 h-4 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,1)] animate-pulse" />
-                        <div className="mt-2 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/20 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                            Actuel: Sherbrooke
-                        </div>
-                    </div>
-                </Marker>
-
-                <Marker longitude={-0.579} latitude={44.837} anchor="bottom">
-                     <div className="relative flex flex-col items-center group cursor-pointer">
-                        <div className="w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_15px_rgba(34,211,238,1)]" />
-                        <div className="mt-2 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/20 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                            Futur: Bordeaux (IPSSI)
-                        </div>
-                    </div>
-                </Marker>
-            </Map>
-            
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#02000a] via-transparent to-transparent opacity-80" />
-          </div>
-        </section>
-
       </main>
     </div>
   );
