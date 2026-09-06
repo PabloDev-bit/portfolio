@@ -135,7 +135,7 @@ export default function Home() {
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] text-[#F5EEFF] font-body selection:bg-[#FF3D8A]/30">
       <Backdrop />
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-5 pb-28 pt-32 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-5 pb-20 pt-28 sm:pb-28 sm:pt-32 sm:px-8 lg:px-12">
         <div className="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
           {/* ---------------- Colonne texte ---------------- */}
           <div>

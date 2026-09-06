@@ -110,7 +110,7 @@ export default function About() {
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
       <Backdrop />
 
-      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-20 pt-28 sm:pb-28 sm:pt-40 sm:px-8 lg:px-12">
         {/* ---------------- Ouverture ---------------- */}
         <header className="grid gap-12 lg:grid-cols-12 lg:items-end lg:gap-16">
           <motion.h1
@@ -141,7 +141,7 @@ export default function About() {
         </header>
 
         {/* ---------------- Parcours ---------------- */}
-        <section className="mt-36">
+        <section className="mt-24 sm:mt-36">
           <SectionTitle>Le parcours</SectionTitle>
 
           <ol ref={timelineRef} className="relative pl-10 sm:pl-14">
@@ -180,7 +180,7 @@ export default function About() {
         </section>
 
         {/* ---------------- Stack ---------------- */}
-        <section className="mt-36">
+        <section className="mt-24 sm:mt-36">
           <SectionTitle>Ce que j&apos;utilise</SectionTitle>
 
           <div className="grid gap-x-16 gap-y-12 md:grid-cols-2">
@@ -211,7 +211,7 @@ export default function About() {
         </section>
 
         {/* ---------------- Projets ---------------- */}
-        <section className="mt-36">
+        <section className="mt-24 sm:mt-36">
           <SectionTitle>Projets récents</SectionTitle>
 
           <ul className="border-t border-white/[0.08]">
@@ -250,7 +250,7 @@ export default function About() {
         </section>
 
         {/* ---------------- Clôture ---------------- */}
-        <section className="mt-36 border-t border-white/10 pt-16">
+        <section className="mt-24 sm:mt-36 border-t border-white/10 pt-12 sm:pt-16">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="flex items-center gap-2.5 text-[0.85rem] text-[#CFC4E4]">

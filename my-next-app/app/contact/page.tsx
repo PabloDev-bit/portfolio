@@ -131,7 +131,7 @@ export default function ContactPage() {
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
       <Backdrop />
 
-      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-20 pt-28 sm:pb-28 sm:pt-40 sm:px-8 lg:px-12">
         {/* ---------------- Ouverture ---------------- */}
         <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
           <motion.h1
@@ -153,7 +153,7 @@ export default function ContactPage() {
           </p>
         </header>
 
-        <div className="mt-24 grid gap-16 lg:grid-cols-12 lg:gap-20">
+        <div className="mt-16 grid gap-16 sm:mt-24 lg:grid-cols-12 lg:gap-20">
           {/* ---------------- Coordonnées ---------------- */}
           <div className="lg:col-span-4">
             <ul>
@@ -285,8 +285,11 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  {/* Piège à robots : hors écran, jamais atteint au clavier */}
-                  <div aria-hidden className="absolute -left-[9999px]">
+                  {/* Piège à robots : hors flux, jamais atteint au clavier */}
+                  <div
+                    aria-hidden
+                    className="h-0 w-0 overflow-hidden opacity-0"
+                  >
                     <label htmlFor="societe">Ne pas remplir</label>
                     <input
                       id="societe"

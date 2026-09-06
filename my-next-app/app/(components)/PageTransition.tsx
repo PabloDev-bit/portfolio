@@ -1,23 +1,31 @@
-'use client'
+"use client";
 
-import { ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { usePathname } from 'next/navigation'
+import { ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { usePathname } from "next/navigation";
 
+/**
+ * Transition d'entrée uniquement.
+ *
+ * Pas d'AnimatePresence ni d'animation de sortie : dans l'App Router, le
+ * contenu est remplacé dès la navigation, donc retenir l'ancien pour le faire
+ * sortir produit une fenêtre vide — l'écran noir au changement rapide de page.
+ *
+ * Pas de translation non plus : un transform sur ce conteneur casserait le
+ * position: fixed du fond et de la navbar.
+ */
 export default function PageTransition({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const reduced = useReducedMotion();
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }}
-        exit={{ opacity: 0, y: 10, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } }}
-        className="min-h-screen"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
-  )
+    <motion.div
+      key={pathname}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: reduced ? 0 : 0.22, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
 }

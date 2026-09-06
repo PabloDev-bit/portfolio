@@ -123,7 +123,7 @@ export default function SkillsPage() {
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
       <Backdrop />
 
-      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-20 pt-28 sm:pb-28 sm:pt-40 sm:px-8 lg:px-12">
         {/* ---------------- Ouverture ---------------- */}
         <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
           <motion.h1
@@ -159,7 +159,7 @@ export default function SkillsPage() {
         {/* ---------------- Domaines ---------------- */}
         <div className="mt-4">
           {DOMAINES.map((domaine) => (
-            <section key={domaine.titre} className="mt-24 first:mt-20">
+            <section key={domaine.titre} className="mt-16 sm:mt-24 first:mt-12">
               <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
                 {/* Intitulé du domaine */}
                 <div className="lg:col-span-4">
@@ -176,14 +176,14 @@ export default function SkillsPage() {
                   {domaine.competences.map((c, i) => (
                     <li
                       key={c.nom}
-                      className="group flex items-center justify-between gap-6 border-t border-white/[0.08] py-5 last:border-b"
+                      className="group flex flex-col gap-2 border-t border-white/[0.08] py-5 last:border-b sm:flex-row sm:items-center sm:justify-between sm:gap-6"
                     >
                       <span className="font-display text-[1.1rem] font-medium text-[#E4DBF5] transition-colors duration-200 group-hover:text-white">
                         {c.nom}
                       </span>
 
-                      <span className="flex shrink-0 items-center gap-5">
-                        <span className="w-[5.5rem] text-right text-[0.8rem] text-[#7E7196] transition-colors duration-200 group-hover:text-[#C4B5FD]">
+                      <span className="flex shrink-0 items-center gap-4 sm:gap-5">
+                        <span className="text-[0.8rem] text-[#7E7196] transition-colors duration-200 group-hover:text-[#C4B5FD] sm:w-[5.5rem] sm:text-right">
                           {LIBELLES[c.cran]}
                         </span>
                         <Jauge
@@ -201,7 +201,7 @@ export default function SkillsPage() {
         </div>
 
         {/* ---------------- Clôture ---------------- */}
-        <section className="mt-32 border-t border-white/10 pt-16">
+        <section className="mt-24 sm:mt-32 border-t border-white/10 pt-12 sm:pt-16">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
             <p className="max-w-[38ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
               La liste est honnête. Le mieux reste de regarder ce que j&apos;en

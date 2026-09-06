@@ -339,7 +339,7 @@ export default function ProjectsPage() {
         <CursorPreview projet={survole} />
       )}
 
-      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-20 pt-28 sm:pb-28 sm:pt-40 sm:px-8 lg:px-12">
         {/* ---------------- Ouverture ---------------- */}
         <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
           <motion.h1
@@ -418,7 +418,7 @@ export default function ProjectsPage() {
         </ul>
 
         {/* ---------------- Clôture ---------------- */}
-        <section className="mt-28 border-t border-white/10 pt-16">
+        <section className="mt-20 sm:mt-28 border-t border-white/10 pt-12 sm:pt-16">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
             <p className="max-w-[36ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
               Le prochain projet, j&apos;aimerais le construire chez vous.

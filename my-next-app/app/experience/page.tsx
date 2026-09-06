@@ -85,7 +85,7 @@ function Etape({
         </h2>
       </div>
 
-      <p className="mt-3 pl-13 text-[0.9rem] text-[#C4B5FD] lg:pl-[52px]">
+      <p className="mt-3 text-[0.9rem] text-[#C4B5FD] lg:pl-[52px]">
         {etape.lieu}
       </p>
 
@@ -119,7 +119,7 @@ export default function ExperiencePage() {
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#060309] font-body text-[#F5EEFF] selection:bg-[#FF3D8A]/30">
       <Backdrop />
 
-      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-28 pt-40 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto max-w-[1440px] px-5 pb-20 pt-28 sm:pb-28 sm:pt-40 sm:px-8 lg:px-12">
         {/* ---------------- Ouverture ---------------- */}
         <header className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
           <motion.h1
@@ -143,7 +143,7 @@ export default function ExperiencePage() {
         </header>
 
         {/* ---------------- Chronologie ---------------- */}
-        <div className="mt-32 grid gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="mt-20 grid gap-12 sm:mt-32 lg:grid-cols-12 lg:gap-16">
           {/* Colonne fixe : l'année en cours */}
           <div className="hidden lg:col-span-4 lg:block">
             <div className="sticky top-40">
@@ -209,7 +209,7 @@ export default function ExperiencePage() {
         </div>
 
         {/* ---------------- Clôture ---------------- */}
-        <section className="mt-32 border-t border-white/10 pt-16">
+        <section className="mt-24 sm:mt-32 border-t border-white/10 pt-12 sm:pt-16">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
             <p className="max-w-[34ch] font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-tight tracking-tight text-white">
               La suite s&apos;écrit en alternance, à partir de décembre 2026.
